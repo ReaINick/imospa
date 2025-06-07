@@ -90,6 +90,18 @@ export const CONFIG = {
         SAVE_VERSION: '1.0.0'
     },
     
+    // Particle system settings - ADDED MISSING SECTION
+    PARTICLES: {
+        MAX_PARTICLES: 200,
+        POOL_SIZE: 300,
+        DEFAULT_LIFETIME: 1.0,
+        DEFAULT_DECAY: 0.02,
+        ABSORPTION_PARTICLES: 20,
+        SPLIT_PARTICLES: 15,
+        DEATH_PARTICLES: 30,
+        POWERUP_PARTICLES: 12
+    },
+    
     // Shop prices
     SHOP: {
         POWERUPS: {
