@@ -1,12 +1,12 @@
 // js/entities/Player.js
 import { Cell } from './Cell.js';
 import { Utils } from '../utils/Utils.js';
-import { Config } from '../core/Config.js';
+import { CONFIG } from '../core/Config.js';
 import { EventSystem } from '../core/EventSystem.js';
 
 export class Player extends Cell {
     constructor(x, y, name = 'Player') {
-        super(x, y, Config.PLAYER.STARTING_MASS);
+        super(x, y, CONFIG.PLAYER.STARTING_MASS);
         
         // Player identification
         this.name = name;
@@ -15,7 +15,7 @@ export class Player extends Cell {
         
         // Multiple cells system
         this.cells = [this];
-        this.maxCells = Config.PLAYER.MAX_CELLS;
+        this.maxCells = CONFIG.PLAYER.MAX_CELLS;
         this.splitCooldown = 0;
         this.recombineTimer = new Map(); // Track when cells can recombine
         
@@ -34,7 +34,7 @@ export class Player extends Cell {
             cellsAbsorbed: 0,
             playersDefeated: 0,
             timesEaten: 0,
-            highestMass: Config.PLAYER.STARTING_MASS,
+            highestMass: CONFIG.PLAYER.STARTING_MASS,
             gamesPlayed: 0,
             totalPlayTime: 0
         };
@@ -101,7 +101,7 @@ export class Player extends Cell {
         
         // Apply movement force based on mass
         const maxSpeed = this.getMaxSpeed(cell.mass);
-        const acceleration = Config.PHYSICS.ACCELERATION / Math.sqrt(cell.mass);
+        const acceleration = CONFIG.PHYSICS.ACCELERATION / Math.sqrt(cell.mass);
         
         // Apply acceleration towards target
         cell.velocity.x += this.targetDirection.x * acceleration * deltaTime;
@@ -115,8 +115,8 @@ export class Player extends Cell {
         }
         
         // Apply friction
-        cell.velocity.x *= Config.PHYSICS.FRICTION;
-        cell.velocity.y *= Config.PHYSICS.FRICTION;
+        cell.velocity.x *= CONFIG.PHYSICS.FRICTION;
+        cell.velocity.y *= CONFIG.PHYSICS.FRICTION;
         
         // Update position
         cell.x += cell.velocity.x * deltaTime;
@@ -138,9 +138,9 @@ export class Player extends Cell {
     }
 
     getMaxSpeed(mass) {
-        const baseSpeed = Config.PHYSICS.BASE_SPEED;
-        const massPenalty = Math.log(mass) * Config.PHYSICS.MASS_SPEED_FACTOR;
-        return Math.max(Config.PHYSICS.MIN_SPEED, baseSpeed - massPenalty);
+        const baseSpeed = CONFIG.PHYSICS.BASE_SPEED;
+        const massPenalty = Math.log(mass) * CONFIG.PHYSICS.MASS_SPEED_FACTOR;
+        return Math.max(CONFIG.PHYSICS.MIN_SPEED, baseSpeed - massPenalty);
     }
 
     keepCellInBounds(cell) {
@@ -148,18 +148,18 @@ export class Player extends Cell {
         
         if (cell.x - margin < 0) {
             cell.x = margin;
-            cell.velocity.x *= -Config.PHYSICS.BOUNDARY_BOUNCE;
-        } else if (cell.x + margin > Config.WORLD.WIDTH) {
-            cell.x = Config.WORLD.WIDTH - margin;
-            cell.velocity.x *= -Config.PHYSICS.BOUNDARY_BOUNCE;
+            cell.velocity.x *= -CONFIG.PHYSICS.BOUNDARY_BOUNCE;
+        } else if (cell.x + margin > CONFIG.WORLD.WIDTH) {
+            cell.x = CONFIG.WORLD.WIDTH - margin;
+            cell.velocity.x *= -CONFIG.PHYSICS.BOUNDARY_BOUNCE;
         }
         
         if (cell.y - margin < 0) {
             cell.y = margin;
-            cell.velocity.y *= -Config.PHYSICS.BOUNDARY_BOUNCE;
-        } else if (cell.y + margin > Config.WORLD.HEIGHT) {
-            cell.y = Config.WORLD.HEIGHT - margin;
-            cell.velocity.y *= -Config.PHYSICS.BOUNDARY_BOUNCE;
+            cell.velocity.y *= -CONFIG.PHYSICS.BOUNDARY_BOUNCE;
+        } else if (cell.y + margin > CONFIG.WORLD.HEIGHT) {
+            cell.y = CONFIG.WORLD.HEIGHT - margin;
+            cell.velocity.y *= -CONFIG.PHYSICS.BOUNDARY_BOUNCE;
         }
     }
 
@@ -168,7 +168,7 @@ export class Player extends Cell {
         if (!this.canSplit()) return false;
         
         const cellsToSplit = this.cells.filter(cell => 
-            cell.mass >= Config.PLAYER.MIN_SPLIT_MASS
+            cell.mass >= CONFIG.PLAYER.MIN_SPLIT_MASS
         );
         
         if (cellsToSplit.length === 0) return false;
@@ -184,14 +184,14 @@ export class Player extends Cell {
                 
                 // Set recombine timer
                 const cellId = cell.id + '-' + newCell.id;
-                this.recombineTimer.set(cellId, Date.now() + Config.PLAYER.RECOMBINE_TIME);
+                this.recombineTimer.set(cellId, Date.now() + CONFIG.PLAYER.RECOMBINE_TIME);
             }
         }
         
         if (newCells.length > 0) {
             this.cells.push(...newCells);
             this.lastSplitTime = Date.now();
-            this.splitCooldown = Config.PLAYER.SPLIT_COOLDOWN;
+            this.splitCooldown = CONFIG.PLAYER.SPLIT_COOLDOWN;
             
             EventSystem.emit('playerSplit', {
                 player: this,
@@ -220,7 +220,7 @@ export class Player extends Cell {
         );
         
         // Apply split momentum
-        const momentum = Config.PHYSICS.SPLIT_MOMENTUM;
+        const momentum = CONFIG.PHYSICS.SPLIT_MOMENTUM;
         newCell.velocity.x = splitDirection.x * momentum;
         newCell.velocity.y = splitDirection.y * momentum;
         
@@ -255,7 +255,7 @@ export class Player extends Cell {
     canSplit() {
         return this.splitCooldown <= 0 && 
                this.cells.length < this.maxCells &&
-               this.cells.some(cell => cell.mass >= Config.PLAYER.MIN_SPLIT_MASS);
+               this.cells.some(cell => cell.mass >= CONFIG.PLAYER.MIN_SPLIT_MASS);
     }
 
     // Recombination system
@@ -492,12 +492,12 @@ export class Player extends Cell {
 
     respawn(x, y) {
         this.isDead = false;
-        this.cells = [new Cell(x, y, Config.PLAYER.STARTING_MASS)];
+        this.cells = [new Cell(x, y, CONFIG.PLAYER.STARTING_MASS)];
         this.cells[0].color = this.generateColor();
         this.cells[0].ownerId = this.id;
         
         // Reset some stats but keep progression
-        this.invulnerabilityTime = Config.PLAYER.RESPAWN_INVULNERABILITY;
+        this.invulnerabilityTime = CONFIG.PLAYER.RESPAWN_INVULNERABILITY;
         this.recombineTimer.clear();
         this.splitCooldown = 0;
         
