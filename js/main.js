@@ -1,6 +1,6 @@
 // js/main.js
 import { EventSystem } from './core/EventSystem.js';
-import { Config } from './core/Config.js';
+import { CONFIG } from './core/Config.js';
 import { GameLoop } from './core/GameLoop.js';
 import { PhysicsEngine } from './physics/PhysicsEngine.js';
 import { Renderer } from './rendering/Renderer.js';
