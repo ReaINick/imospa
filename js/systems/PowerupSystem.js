@@ -1,7 +1,7 @@
 // js/systems/PowerupSystem.js
 import { Utils } from '../utils/Utils.js';
 import { CONFIG } from '../core/Config.js';
-import { EventSystem } from '../core/EventSystem.js';
+import { gameEvents } from '../core/EventSystem.js';
 
 export class PowerupSystem {
     constructor(game) {
@@ -125,7 +125,7 @@ export class PowerupSystem {
         
         if (success) {
             // Trigger events
-            EventSystem.emit('powerupUsed', {
+            gameEvents.emit('powerupUsed', {
                 player: player,
                 powerupId: powerupId,
                 powerup: powerup
@@ -374,7 +374,7 @@ export class PowerupSystem {
     
     removePowerupEffect(powerup) {
         // Clean up any temporary effects
-        EventSystem.emit('powerupExpired', {
+        gameEvents.emit('powerupExpired', {
             player: powerup.player,
             type: powerup.type
         });
@@ -387,7 +387,7 @@ export class PowerupSystem {
     
     showPowerupEffect(player, powerup) {
         // Create visual effect for powerup activation
-        EventSystem.emit('showPowerupEffect', {
+        gameEvents.emit('showPowerupEffect', {
             player: player,
             powerup: powerup,
             x: player.x,
@@ -397,7 +397,7 @@ export class PowerupSystem {
     
     createMergeEffect(mainCell, mergedCells) {
         // Create particle effect for cell merging
-        EventSystem.emit('createMergeEffect', {
+        gameEvents.emit('createMergeEffect', {
             mainCell: mainCell,
             mergedCells: mergedCells
         });
