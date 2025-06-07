@@ -1,5 +1,5 @@
 // js/ai/BotManager.js
-import { Bot } from '../entities/Bot.js';
+import Bot from '../entities/Bot.js';  // Changed from named import to default import
 import { Food } from '../entities/Food.js';
 import { Utils } from '../utils/Utils.js';
 import { CONFIG } from '../core/Config.js';
@@ -80,9 +80,8 @@ export class BotManager {
         // Generate unique name
         const name = this.generateBotName();
         
-        // Create bot
-        const bot = new Bot(spawnPos.x, spawnPos.y, difficulty);
-        bot.name = name;
+        // Create bot - using config object to pass name (aligning with Bot.js constructor)
+        const bot = new Bot(spawnPos.x, spawnPos.y, difficulty, { name: name });
         bot.id = Utils.generateId();
         
         // Set bot properties based on difficulty
@@ -164,50 +163,67 @@ export class BotManager {
     }
     
     configureBotByDifficulty(bot, difficulty) {
+        // Updated to match Bot.js property names and structure
         switch (difficulty) {
             case 'easy':
                 bot.reactionTime = 800;
-                bot.aggressionLevel = 0.3;
-                bot.splitChance = 0.1;
-                bot.huntRadius = 80;
-                bot.fleeRadius = 120;
+                bot.ai.aggressionLevel = 0.3;
+                bot.ai.splitChance = 0.1;
+                bot.ai.huntRadius = 80;
+                bot.ai.fleeRadius = 120;
                 bot.maxSpeed = 0.8;
                 break;
                 
             case 'medium':
                 bot.reactionTime = 500;
-                bot.aggressionLevel = 0.6;
-                bot.splitChance = 0.25;
-                bot.huntRadius = 100;
-                bot.fleeRadius = 140;
+                bot.ai.aggressionLevel = 0.6;
+                bot.ai.splitChance = 0.25;
+                bot.ai.huntRadius = 100;
+                bot.ai.fleeRadius = 140;
                 bot.maxSpeed = 1.0;
                 break;
                 
             case 'hard':
                 bot.reactionTime = 200;
-                bot.aggressionLevel = 0.8;
-                bot.splitChance = 0.4;
-                bot.huntRadius = 140;
-                bot.fleeRadius = 160;
+                bot.ai.aggressionLevel = 0.8;
+                bot.ai.splitChance = 0.4;
+                bot.ai.huntRadius = 140;
+                bot.ai.fleeRadius = 160;
                 bot.maxSpeed = 1.2;
+                break;
+                
+            case 'expert':  // Added expert level to match Bot.js
+                bot.reactionTime = 100;
+                bot.ai.aggressionLevel = 0.95;
+                bot.ai.splitChance = 0.5;
+                bot.ai.huntRadius = 160;
+                bot.ai.fleeRadius = 180;
+                bot.maxSpeed = 1.4;
                 break;
         }
     }
     
     updateBots(deltaTime) {
+        const gameTime = Date.now(); // Added gameTime parameter to match Bot.js update signature
+        
         for (const bot of this.bots) {
             if (!bot.isAlive) continue;
             
             // Get nearby entities for bot AI
             const nearbyEntities = this.getNearbyEntities(bot);
             
-            // Update bot AI
-            bot.update(deltaTime, nearbyEntities);
+            // Update bot AI - matching Bot.js update signature
+            bot.update(deltaTime, nearbyEntities, gameTime);
         }
     }
     
     getNearbyEntities(bot) {
-        const searchRadius = Math.max(bot.huntRadius, bot.fleeRadius) + 50;
+        // Updated to match Bot.js expected AI properties
+        const searchRadius = Math.max(
+            bot.ai?.huntRadius || 100, 
+            bot.ai?.fleeRadius || 140
+        ) + 50;
+        
         const nearbyEntities = {
             players: [],
             bots: [],
@@ -297,12 +313,13 @@ export class BotManager {
     }
     
     // Method to adjust difficulty distribution
-    setDifficultyDistribution(easy, medium, hard) {
-        const total = easy + medium + hard;
+    setDifficultyDistribution(easy, medium, hard, expert = 0) {  // Added expert parameter
+        const total = easy + medium + hard + expert;
         this.difficultyDistribution = {
             easy: easy / total,
             medium: medium / total,
-            hard: hard / total
+            hard: hard / total,
+            expert: expert / total  // Added expert difficulty
         };
     }
     
@@ -311,8 +328,10 @@ export class BotManager {
         const spawnPos = this.findSafeSpawnPosition();
         if (!spawnPos) return null;
         
-        const bot = new Bot(spawnPos.x, spawnPos.y, 'medium');
-        bot.name = `${player.name}'s ${botType}`;
+        // Using config object to pass name (matching Bot.js constructor)
+        const bot = new Bot(spawnPos.x, spawnPos.y, 'medium', { 
+            name: `${player.name}'s ${botType}` 
+        });
         bot.isCompanion = true;
         bot.owner = player;
         bot.companionType = botType;
@@ -325,23 +344,24 @@ export class BotManager {
     }
     
     configureCompanionBot(bot, botType) {
+        // Updated to use bot.ai properties to match Bot.js structure
         switch (botType) {
             case 'Defender':
-                bot.aggressionLevel = 0.9;
-                bot.protectRadius = 200;
-                bot.behaviorType = 'defender';
+                bot.ai.aggressionLevel = 0.9;
+                bot.ai.protectRadius = 200;
+                bot.ai.behaviorType = 'defender';
                 break;
                 
             case 'Hunter':
-                bot.aggressionLevel = 1.0;
-                bot.huntRadius = 200;
-                bot.behaviorType = 'hunter';
+                bot.ai.aggressionLevel = 1.0;
+                bot.ai.huntRadius = 200;
+                bot.ai.behaviorType = 'hunter';
                 break;
                 
             case 'Collector':
-                bot.aggressionLevel = 0.2;
-                bot.collectRadius = 150;
-                bot.behaviorType = 'collector';
+                bot.ai.aggressionLevel = 0.2;
+                bot.ai.collectRadius = 150;
+                bot.ai.behaviorType = 'collector';
                 break;
         }
     }
@@ -357,7 +377,7 @@ export class BotManager {
     }
     
     getDifficultyBreakdown() {
-        const breakdown = { easy: 0, medium: 0, hard: 0 };
+        const breakdown = { easy: 0, medium: 0, hard: 0, expert: 0 }; // Added expert
         
         for (const bot of this.bots) {
             breakdown[bot.difficulty]++;
