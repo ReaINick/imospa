@@ -143,16 +143,17 @@ class Main {
         window.addEventListener('resize', () => this.resizeCanvas());
     }
     
-    initializeUI() {
-        this.uiManager = new UIManager();
-        this.shop = new Shop();
-        this.hud = new HUD();
-        this.leaderboard = new Leaderboard();
-        
-        // Connect systems
-        this.shop.setCurrencyManager(this.currencyManager);
-        this.hud.setProgressionSystem(this.progressionSystem);
-    }
+initializeUI() {
+    // Pass 'this' (the game instance) to UIManager
+    this.uiManager = new UIManager(this);
+    this.shop = new Shop();
+    this.hud = new HUD();
+    this.leaderboard = new Leaderboard();
+    
+    // Connect systems
+    this.shop.setCurrencyManager(this.currencyManager);
+    this.hud.setProgressionSystem(this.progressionSystem);
+}
     
     initializeGameSystems() {
         // Connect systems together
