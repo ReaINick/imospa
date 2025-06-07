@@ -1,6 +1,6 @@
 // js/systems/CurrencyManager.js
 import { CONFIG } from '../core/Config.js';
-import { EventSystem } from '../core/EventSystem.js';
+import { gameEvents } from '../core/EventSystem.js'; // Changed from EventSystem
 import { Utils } from '../utils/Utils.js';
 
 export class CurrencyManager {
@@ -87,23 +87,23 @@ export class CurrencyManager {
     }
     
     setupEventListeners() {
-        EventSystem.on('playerAbsorbedFood', (data) => {
+        gameEvents.on('playerAbsorbedFood', (data) => {
             this.handleFoodAbsorption(data.player, data.food);
         });
         
-        EventSystem.on('playerAbsorbedCell', (data) => {
+        gameEvents.on('playerAbsorbedCell', (data) => {
             this.handleCellAbsorption(data.player, data.absorbed);
         });
         
-        EventSystem.on('playerLevelUp', (data) => {
+        gameEvents.on('playerLevelUp', (data) => {
             this.handleLevelUp(data.player, data.newLevel);
         });
         
-        EventSystem.on('achievementCompleted', (data) => {
+        gameEvents.on('achievementCompleted', (data) => {
             this.handleAchievementReward(data.achievement, data.reward);
         });
         
-        EventSystem.on('gameTimeUpdate', (data) => {
+        gameEvents.on('gameTimeUpdate', (data) => {
             this.handleSurvivalTime(data.player, data.survivalTime);
         });
     }
@@ -176,7 +176,7 @@ export class CurrencyManager {
         const roundedAmount = Math.floor(amount);
         player.coins += roundedAmount;
         
-        EventSystem.emit('coinsAwarded', {
+        gameEvents.emit('coinsAwarded', {
             player,
             amount: roundedAmount,
             source,
@@ -192,7 +192,7 @@ export class CurrencyManager {
         const roundedAmount = Math.floor(amount);
         player.platinumCoins += roundedAmount;
         
-        EventSystem.emit('platinumCoinsAwarded', {
+        gameEvents.emit('platinumCoinsAwarded', {
             player,
             amount: roundedAmount,
             source,
@@ -209,7 +209,7 @@ export class CurrencyManager {
         
         player.coins -= amount;
         
-        EventSystem.emit('coinsSpent', {
+        gameEvents.emit('coinsSpent', {
             player,
             amount,
             source,
@@ -227,7 +227,7 @@ export class CurrencyManager {
         
         player.platinumCoins -= amount;
         
-        EventSystem.emit('platinumCoinsSpent', {
+        gameEvents.emit('platinumCoinsSpent', {
             player,
             amount,
             source,
@@ -319,7 +319,7 @@ export class CurrencyManager {
         player.lastDailyReward = this.lastDailyReward;
         player.consecutiveLoginDays = (player.consecutiveLoginDays || 0) + 1;
         
-        EventSystem.emit('dailyRewardClaimed', {
+        gameEvents.emit('dailyRewardClaimed', {
             player,
             reward,
             day: dailyReward.day,
