@@ -1,5 +1,5 @@
 // js/main.js
-import { EventSystem } from './core/EventSystem.js';
+import { EventSystem, gameEvents } from './core/EventSystem.js';
 import { CONFIG } from './core/Config.js';
 import { GameLoop } from './core/GameLoop.js';
 import { PhysicsEngine } from './physics/PhysicsEngine.js';
@@ -43,7 +43,7 @@ class Main {
         };
         
         // Game systems
-        this.eventSystem = new EventSystem();
+        this.eventSystem = gameEvents;
         this.physicsEngine = new PhysicsEngine();
         this.collisionDetection = new CollisionDetection();
         this.movement = new Movement(this.physicsEngine);
@@ -156,9 +156,9 @@ class Main {
     
     initializeGameSystems() {
         // Connect systems together
-        this.powerupSystem.setEventSystem(this.eventSystem);
-        this.progressionSystem.setEventSystem(this.eventSystem);
-        this.currencyManager.setEventSystem(this.eventSystem);
+        this.powerupSystem.setEventSystem(gameEvents);
+        this.progressionSystem.setEventSystem(gameEvents);
+        this.currencyManager.setEventSystem(gameEvents);
         this.prestigeSystem.setProgressionSystem(this.progressionSystem);
         this.prestigeSystem.setCurrencyManager(this.currencyManager);
         
@@ -168,31 +168,31 @@ class Main {
     
     setupGameEvents() {
         // Player progression events
-        this.eventSystem.on('player.levelUp', (data) => {
+        gameEvents.on('player.levelUp', (data) => {
             this.handleLevelUp(data);
         });
         
-        this.eventSystem.on('player.absorption', (data) => {
+        gameEvents.on('player.absorption', (data) => {
             this.handleAbsorption(data);
         });
         
         // Currency events
-        this.eventSystem.on('currency.earned', (data) => {
+        gameEvents.on('currency.earned', (data) => {
             this.handleCurrencyEarned(data);
         });
         
         // Powerup events
-        this.eventSystem.on('powerup.activated', (data) => {
+        gameEvents.on('powerup.activated', (data) => {
             this.handlePowerupActivated(data);
         });
         
         // Shop events
-        this.eventSystem.on('shop.purchase', (data) => {
+        gameEvents.on('shop.purchase', (data) => {
             this.handleShopPurchase(data);
         });
         
         // Game state events
-        this.eventSystem.on('game.stateChange', (state) => {
+        gameEvents.on('game.stateChange', (state) => {
             this.gameState = state;
         });
     }
@@ -240,7 +240,7 @@ class Main {
             
             // Change game state
             this.gameState = 'playing';
-            this.eventSystem.emit('game.stateChange', 'playing');
+            gameEvents.emit('game.stateChange', 'playing');
             
             // Start game loop
             this.gameLoop.start();
@@ -498,7 +498,7 @@ class Main {
         this.particles.createAbsorptionEffect(food.x, food.y, food.color);
         
         // Emit absorption event
-        this.eventSystem.emit('player.absorption', {
+        gameEvents.emit('player.absorption', {
             player: cell.owner,
             absorbed: food,
             mass: food.mass
