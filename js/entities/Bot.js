@@ -1,7 +1,7 @@
 // Bot.js - Bot entity that extends Player with AI behavior
 import { Player } from './Player.js';  // Changed from default import to named import
 import BotAI from '../ai/BotAI.js';
-import Utils from '../utils/Utils.js';
+import { Utils } from '../utils/Utils.js';
 
 class Bot extends Player {
     constructor(x, y, difficulty = 'medium', config = {}) {
