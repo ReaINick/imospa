@@ -8,8 +8,8 @@ export class BotManager {
     constructor(game) {
         this.game = game;
         this.bots = [];
-        this.maxBots = CONFIG.gameplay.maxBots;
-        this.spawnDelay = CONFIG.bots.spawnDelay;
+        this.maxBots = CONFIG.BOTS.COUNT; // Fixed: Changed from CONFIG.gameplay.maxBots
+        this.spawnDelay = CONFIG.BOTS.DECISION_INTERVAL; // Fixed: Use existing BOTS config
         this.lastSpawn = 0;
         this.difficultyDistribution = {
             easy: 0.4,
@@ -113,11 +113,11 @@ export class BotManager {
         const worldBounds = this.game.worldBounds;
         
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            const x = Utils.randomFloat(
+            const x = Utils.random(
                 worldBounds.left + 100, 
                 worldBounds.right - 100
             );
-            const y = Utils.randomFloat(
+            const y = Utils.random(
                 worldBounds.top + 100, 
                 worldBounds.bottom - 100
             );
