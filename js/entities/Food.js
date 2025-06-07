@@ -1,7 +1,7 @@
 // js/entities/Food.js
 import { Cell } from './Cell.js';
 import { Utils } from '../utils/Utils.js';
-import { Config } from '../core/Config.js';
+import { CONFIG } from '../core/Config.js';
 
 export class Food extends Cell {
     constructor(x, y, type = 'normal') {
@@ -36,7 +36,7 @@ export class Food extends Cell {
     }
 
     static getMassForType(type) {
-        const massConfig = {
+        const massCONFIG = {
             'normal': Utils.randomRange(2, 5),
             'large': Utils.randomRange(8, 12),
             'mega': Utils.randomRange(15, 25),
@@ -47,7 +47,7 @@ export class Food extends Cell {
             'explosive': Utils.randomRange(4, 7)
         };
         
-        return massConfig[type] || massConfig['normal'];
+        return massCONFIG[type] || massCONFIG['normal'];
     }
 
     setupTypeProperties() {
