@@ -1,5 +1,5 @@
 // js/systems/ProgressionSystem.js
-import { Config } from '../core/Config.js';
+import { CONFIG } from '../core/CONFIG.js';
 import { EventSystem } from '../core/EventSystem.js';
 
 export class ProgressionSystem {
@@ -15,7 +15,7 @@ export class ProgressionSystem {
         const table = {};
         let baseXP = 100;
         
-        for (let level = 1; level <= Config.PROGRESSION.MAX_LEVEL; level++) {
+        for (let level = 1; level <= CONFIG.PROGRESSION.MAX_LEVEL; level++) {
             table[level] = Math.floor(baseXP * Math.pow(1.15, level - 1));
         }
         
@@ -25,7 +25,7 @@ export class ProgressionSystem {
     generateLevelRewards() {
         const rewards = {};
         
-        for (let level = 1; level <= Config.PROGRESSION.MAX_LEVEL; level++) {
+        for (let level = 1; level <= CONFIG.PROGRESSION.MAX_LEVEL; level++) {
             rewards[level] = {
                 coins: Math.floor(25 + (level * 5)),
                 platinumCoins: level % 10 === 0 ? 1 : 0, // Every 10 levels
@@ -200,7 +200,7 @@ export class ProgressionSystem {
     }
     
     handleFoodAbsorption(player, food) {
-        const xpGain = Config.PROGRESSION.FOOD_XP_BASE;
+        const xpGain = CONFIG.PROGRESSION.FOOD_XP_BASE;
         this.awardExperience(player, xpGain);
     }
     
@@ -214,11 +214,11 @@ export class ProgressionSystem {
     }
     
     calculateAbsorptionXP(absorbedMass) {
-        return Math.floor(Config.PROGRESSION.ABSORPTION_XP_BASE * Math.sqrt(absorbedMass));
+        return Math.floor(CONFIG.PROGRESSION.ABSORPTION_XP_BASE * Math.sqrt(absorbedMass));
     }
     
     awardExperience(player, xp) {
-        if (!player || player.level >= Config.PROGRESSION.MAX_LEVEL) return;
+        if (!player || player.level >= CONFIG.PROGRESSION.MAX_LEVEL) return;
         
         player.experience += xp;
         
@@ -236,7 +236,7 @@ export class ProgressionSystem {
     
     canLevelUp(player) {
         const requiredXP = this.getRequiredXP(player.level + 1);
-        return player.experience >= requiredXP && player.level < Config.PROGRESSION.MAX_LEVEL;
+        return player.experience >= requiredXP && player.level < CONFIG.PROGRESSION.MAX_LEVEL;
     }
     
     levelUp(player) {
@@ -289,14 +289,14 @@ export class ProgressionSystem {
     }
     
     getXPToNextLevel(player) {
-        if (player.level >= Config.PROGRESSION.MAX_LEVEL) return 0;
+        if (player.level >= CONFIG.PROGRESSION.MAX_LEVEL) return 0;
         
         const requiredXP = this.getRequiredXP(player.level + 1);
         return Math.max(0, requiredXP - player.experience);
     }
     
     getLevelProgress(player) {
-        if (player.level >= Config.PROGRESSION.MAX_LEVEL) return 1;
+        if (player.level >= CONFIG.PROGRESSION.MAX_LEVEL) return 1;
         
         const currentLevelXP = this.getRequiredXP(player.level);
         const nextLevelXP = this.getRequiredXP(player.level + 1);
