@@ -73,6 +73,15 @@ export const CONFIG = {
         LEVEL_BASE_EXP: 100,
         LEVEL_EXP_MULTIPLIER: 1.5
     },
+
+    // Progression system settings
+    PROGRESSION: {
+        MAX_LEVEL: 100,
+        FOOD_XP_BASE: 1,
+        ABSORPTION_XP_BASE: 10,
+        LEVEL_XP_MULTIPLIER: 1.15,
+        PRESTIGE_LEVEL_REQUIREMENT: 50
+    },
     
     // Shop prices
     SHOP: {
