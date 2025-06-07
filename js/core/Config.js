@@ -1,14 +1,21 @@
+
 // Game Configuration Constants
 export const CONFIG = {
     // Canvas settings
     CANVAS_WIDTH: 1200,
     CANVAS_HEIGHT: 800,
     
-    // World settings
+    // World settings - Fixed naming to match PhysicsEngine expectations
     WORLD_WIDTH: 4000,
     WORLD_HEIGHT: 4000,
     
-    // Physics constants
+    // Alternative world settings (for backward compatibility)
+    WORLD: {
+        WIDTH: 4000,
+        HEIGHT: 4000
+    },
+    
+    // Physics constants - Added missing properties
     PHYSICS: {
         FRICTION: 0.98,
         ABSORPTION_THRESHOLD: 1.1,
@@ -18,8 +25,14 @@ export const CONFIG = {
         MASS_SPEED_FACTOR: 0.02,
         MIN_SPLIT_MASS: 35,
         MAX_CELLS: 16,
-        VELOCITY_THRESHOLD: 0.1
+        VELOCITY_THRESHOLD: 0.1,
+        // Added missing properties
+        MAX_VELOCITY: 20,
+        BASE_SPEED: 200,
+        MIN_SPEED: 50,
+        MAX_CELL_MASS: 10000
     },
+    
     
     // Player settings
     PLAYER: {
