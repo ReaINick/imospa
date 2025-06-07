@@ -81,10 +81,10 @@ class Main {
         
         // World settings
         this.worldBounds = {
-            left: -Config.WORLD.WIDTH / 2,
-            right: Config.WORLD.WIDTH / 2,
-            top: -Config.WORLD.HEIGHT / 2,
-            bottom: Config.WORLD.HEIGHT / 2
+            left: -CONFIG.WORLD.WIDTH / 2,
+            right: CONFIG.WORLD.WIDTH / 2,
+            top: -CONFIG.WORLD.HEIGHT / 2,
+            bottom: CONFIG.WORLD.HEIGHT / 2
         };
         
         this.setupEventListeners();
@@ -214,8 +214,8 @@ class Main {
         this.quadTree = new QuadTree({
             x: this.worldBounds.left,
             y: this.worldBounds.top,
-            width: Config.WORLD.WIDTH,
-            height: Config.WORLD.HEIGHT
+            width: CONFIG.WORLD.WIDTH,
+            height: CONFIG.WORLD.HEIGHT
         });
         
         // Generate initial food
@@ -225,7 +225,7 @@ class Main {
         this.generatePowerups();
         
         // Spawn bots
-        this.botManager.spawnInitialBots(Config.BOTS.INITIAL_COUNT);
+        this.botManager.spawnInitialBots(CONFIG.BOTS.INITIAL_COUNT);
     }
     
     startGame(playerName) {
@@ -576,13 +576,13 @@ class Main {
     
     maintainWorld() {
         // Maintain food count
-        while (this.food.length < Config.FOOD.MAX_COUNT) {
+        while (this.food.length < CONFIG.FOOD.MAX_COUNT) {
             this.generateFood(1);
         }
         
         // Maintain powerup count
-        if (this.powerups.length < Config.POWERUPS.MAX_COUNT && 
-            Math.random() < Config.POWERUPS.SPAWN_RATE) {
+        if (this.powerups.length < CONFIG.POWERUPS.MAX_COUNT && 
+            Math.random() < CONFIG.POWERUPS.SPAWN_RATE) {
             this.generatePowerups(1);
         }
         
@@ -780,7 +780,7 @@ class Main {
         };
     }
     
-    generateFood(count = Config.FOOD.SPAWN_COUNT) {
+    generateFood(count = CONFIG.FOOD.SPAWN_COUNT) {
         for (let i = 0; i < count; i++) {
             const pos = this.getRandomSpawnPosition();
             const food = new Food(pos.x, pos.y);
@@ -840,15 +840,15 @@ class Main {
         if (!this.player) return;
         
         this.player.cells.forEach(cell => {
-            if (cell.mass > Config.PLAYER.MIN_EJECT_MASS) {
+            if (cell.mass > CONFIG.PLAYER.MIN_EJECT_MASS) {
                 const direction = GameMath.getDirection(
                     cell.x, cell.y,
                     this.input.mouse.worldX, this.input.mouse.worldY
                 );
                 
                 // Create ejected mass as food
-                const ejectMass = Config.PLAYER.EJECT_MASS;
-                const ejectSpeed = Config.PLAYER.EJECT_SPEED;
+                const ejectMass = CONFIG.PLAYER.EJECT_MASS;
+                const ejectSpeed = CONFIG.PLAYER.EJECT_SPEED;
                 
                 const ejectedFood = new Food(
                     cell.x + direction.x * (cell.radius + 20),
