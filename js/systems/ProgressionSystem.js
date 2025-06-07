@@ -1,5 +1,5 @@
 // js/systems/ProgressionSystem.js
-import { CONFIG } from '../core/CONFIG.js';
+import { CONFIG } from '../core/Config.js';
 import { EventSystem } from '../core/EventSystem.js';
 
 export class ProgressionSystem {
