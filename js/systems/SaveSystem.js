@@ -1,12 +1,12 @@
 // js/systems/SaveSystem.js
-import { Config } from '../core/Config.js';
+import { CONFIG } from '../core/Config.js';
 import { EventSystem } from '../core/EventSystem.js';
 import { Utils } from '../utils/Utils.js';
 
 export class SaveSystem {
     constructor() {
         this.currentSave = null;
-        this.autoSaveInterval = Config.SAVE.AUTO_SAVE_INTERVAL;
+        this.autoSaveInterval = CONFIG.SAVE.AUTO_SAVE_INTERVAL;
         this.autoSaveTimer = null;
         this.saveVersion = '1.0.0';
         this.compressionEnabled = true;
