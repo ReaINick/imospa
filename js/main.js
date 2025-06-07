@@ -26,7 +26,7 @@ import { PrestigeSystem } from './systems/PrestigeSystem.js';
 import { AccountSystem } from './systems/AccountSystem.js';
 import { QuadTree } from './utils/QuadTree.js';
 import { Utils } from './utils/Utils.js';
-import { GameMath } from './utils/Math.js';
+import { MathUtils } from './utils/Math.js';
 
 class Main {
     constructor() {
