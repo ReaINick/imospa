@@ -11,14 +11,20 @@ export class PhysicsEngine {
             splitMomentum: CONFIG.PHYSICS.SPLIT_MOMENTUM,
             boundaryBounce: CONFIG.PHYSICS.BOUNDARY_BOUNCE,
             minSplitMass: CONFIG.PHYSICS.MIN_SPLIT_MASS,
-            maxVelocity: CONFIG.PHYSICS.MAX_VELOCITY
+            maxVelocity: CONFIG.PHYSICS.MAX_VELOCITY || 20, // Add default if missing
+            maxCells: CONFIG.PHYSICS.MAX_CELLS,
+            velocityThreshold: CONFIG.PHYSICS.VELOCITY_THRESHOLD,
+            recombineTime: CONFIG.PHYSICS.RECOMBINE_TIME,
+            baseSpeed: CONFIG.PHYSICS.BASE_SPEED || 200, // Add default if missing
+            minSpeed: CONFIG.PHYSICS.MIN_SPEED || 50 // Add default if missing
         };
         
+        // Fix: Use correct CONFIG property names
         this.worldBounds = {
-            minX: -CONFIG.WORLD.WIDTH / 2,
-            maxX: CONFIG.WORLD.WIDTH / 2,
-            minY: -CONFIG.WORLD.HEIGHT / 2,
-            maxY: CONFIG.WORLD.HEIGHT / 2
+            minX: -CONFIG.WORLD_WIDTH / 2,  // Changed from CONFIG.WORLD.WIDTH
+            maxX: CONFIG.WORLD_WIDTH / 2,   // Changed from CONFIG.WORLD.WIDTH
+            minY: -CONFIG.WORLD_HEIGHT / 2, // Changed from CONFIG.WORLD.HEIGHT
+            maxY: CONFIG.WORLD_HEIGHT / 2   // Changed from CONFIG.WORLD.HEIGHT
         };
     }
 
@@ -69,8 +75,8 @@ export class PhysicsEngine {
         entity.velocity.y *= this.config.friction;
         
         // Stop very small velocities to prevent floating point drift
-        if (Math.abs(entity.velocity.x) < 0.01) entity.velocity.x = 0;
-        if (Math.abs(entity.velocity.y) < 0.01) entity.velocity.y = 0;
+        if (Math.abs(entity.velocity.x) < this.config.velocityThreshold) entity.velocity.x = 0;
+        if (Math.abs(entity.velocity.y) < this.config.velocityThreshold) entity.velocity.y = 0;
     }
 
     /**
@@ -80,8 +86,8 @@ export class PhysicsEngine {
      */
     calculateMassBasedSpeed(mass) {
         return Math.max(
-            CONFIG.PHYSICS.MIN_SPEED,
-            CONFIG.PHYSICS.BASE_SPEED - (mass * this.config.massSpeedFactor)
+            this.config.minSpeed,
+            this.config.baseSpeed - (mass * this.config.massSpeedFactor)
         );
     }
 
@@ -245,7 +251,7 @@ export class PhysicsEngine {
         absorber.mass += target.mass;
         
         // Handle mass overflow for split cells
-        if (absorber.mass > CONFIG.PHYSICS.MAX_CELL_MASS) {
+        if (absorber.mass > CONFIG.PLAYER.MAX_MASS) {
             this.handleMassOverflow(absorber);
         }
     }
@@ -255,7 +261,7 @@ export class PhysicsEngine {
      * @param {Object} cell - Cell with overflow
      */
     handleMassOverflow(cell) {
-        if (cell.cells && cell.cells.length < CONFIG.PHYSICS.MAX_CELLS) {
+        if (cell.cells && cell.cells.length < this.config.maxCells) {
             // Auto-split if possible
             const splitDirection = MathUtils.randomAngle();
             this.processCellSplitting(cell, splitDirection, this.config.splitMomentum);
@@ -307,7 +313,7 @@ export class PhysicsEngine {
      */
     validateSplitConditions(cell) {
         return cell.mass >= this.config.minSplitMass && 
-               (!cell.cells || cell.cells.length < CONFIG.PHYSICS.MAX_CELLS);
+               (!cell.cells || cell.cells.length < this.config.maxCells);
     }
 
     /**
@@ -379,7 +385,7 @@ export class PhysicsEngine {
         setTimeout(() => {
             if (parentCell.isActive) parentCell.canRecombine = true;
             if (newCell.isActive) newCell.canRecombine = true;
-        }, CONFIG.PHYSICS.RECOMBINE_TIME);
+        }, this.config.recombineTime);
     }
 
     /**
