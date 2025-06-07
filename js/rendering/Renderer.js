@@ -1,5 +1,5 @@
 // js/rendering/Renderer.js
-import { Config } from '../core/Config.js';
+import { CONFIG } from '../core/Config.js';
 import { Utils } from '../utils/Utils.js';
 
 export class Renderer {
