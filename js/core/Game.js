@@ -1,5 +1,5 @@
 import { EventSystem } from './EventSystem.js';
-import { Config } from './Config.js';
+import { CONFIG } from './Config.js';
 import { GameLoop } from './GameLoop.js';
 import { PhysicsEngine } from '../physics/PhysicsEngine.js';
 import { CollisionDetection } from '../physics/CollisionDetection.js';
@@ -30,7 +30,7 @@ export class Game {
         
         // Initialize core systems
         this.eventSystem = new EventSystem();
-        this.config = new Config();
+        this.CONFIG = new CONFIG();
         this.physicsEngine = new PhysicsEngine();
         this.collisionDetection = new CollisionDetection();
         this.movement = new Movement(this.physicsEngine);
@@ -56,10 +56,10 @@ export class Game {
         this.entities = [];
         this.quadTree = null;
         this.worldBounds = {
-            left: -Config.WORLD_SIZE / 2,
-            right: Config.WORLD_SIZE / 2,
-            top: -Config.WORLD_SIZE / 2,
-            bottom: Config.WORLD_SIZE / 2
+            left: -CONFIG.WORLD_SIZE / 2,
+            right: CONFIG.WORLD_SIZE / 2,
+            top: -CONFIG.WORLD_SIZE / 2,
+            bottom: CONFIG.WORLD_SIZE / 2
         };
         
         // Performance tracking
@@ -80,8 +80,8 @@ export class Game {
         this.quadTree = new QuadTree({
             x: this.worldBounds.left,
             y: this.worldBounds.top,
-            width: Config.WORLD_SIZE,
-            height: Config.WORLD_SIZE
+            width: CONFIG.WORLD_SIZE,
+            height: CONFIG.WORLD_SIZE
         });
         
         // Initialize food spawning
@@ -172,7 +172,7 @@ export class Game {
         this.isRunning = true;
         
         // Add bots
-        const bots = this.botManager.spawnBots(Config.INITIAL_BOT_COUNT);
+        const bots = this.botManager.spawnBots(CONFIG.INITIAL_BOT_COUNT);
         this.entities.push(...bots);
         
         // Set camera target
@@ -453,36 +453,36 @@ export class Game {
             // Left boundary
             if (cell.x - cell.radius < this.worldBounds.left) {
                 cell.x = this.worldBounds.left + cell.radius;
-                cell.velocity.x *= -Config.BOUNDARY_BOUNCE;
+                cell.velocity.x *= -CONFIG.BOUNDARY_BOUNCE;
             }
             
             // Right boundary
             if (cell.x + cell.radius > this.worldBounds.right) {
                 cell.x = this.worldBounds.right - cell.radius;
-                cell.velocity.x *= -Config.BOUNDARY_BOUNCE;
+                cell.velocity.x *= -CONFIG.BOUNDARY_BOUNCE;
             }
             
             // Top boundary
             if (cell.y - cell.radius < this.worldBounds.top) {
                 cell.y = this.worldBounds.top + cell.radius;
-                cell.velocity.y *= -Config.BOUNDARY_BOUNCE;
+                cell.velocity.y *= -CONFIG.BOUNDARY_BOUNCE;
             }
             
             // Bottom boundary
             if (cell.y + cell.radius > this.worldBounds.bottom) {
                 cell.y = this.worldBounds.bottom - cell.radius;
-                cell.velocity.y *= -Config.BOUNDARY_BOUNCE;
+                cell.velocity.y *= -CONFIG.BOUNDARY_BOUNCE;
             }
         }
     }
     
     ejectMass(player) {
-        if (player.getTotalMass() < Config.MIN_EJECT_MASS) return;
+        if (player.getTotalMass() < CONFIG.MIN_EJECT_MASS) return;
         
         for (const cell of player.cells) {
-            if (cell.mass > Config.MIN_EJECT_MASS) {
+            if (cell.mass > CONFIG.MIN_EJECT_MASS) {
                 // Create ejected mass
-                const ejectedMass = Math.min(cell.mass * 0.1, Config.MAX_EJECT_MASS);
+                const ejectedMass = Math.min(cell.mass * 0.1, CONFIG.MAX_EJECT_MASS);
                 cell.mass -= ejectedMass;
                 cell.updateRadius();
                 
@@ -497,8 +497,8 @@ export class Game {
                 
                 // Add velocity to ejected mass
                 food.velocity = {
-                    x: Math.cos(angle) * Config.EJECT_VELOCITY,
-                    y: Math.sin(angle) * Config.EJECT_VELOCITY
+                    x: Math.cos(angle) * CONFIG.EJECT_VELOCITY,
+                    y: Math.sin(angle) * CONFIG.EJECT_VELOCITY
                 };
                 
                 this.food.push(food);
@@ -507,7 +507,7 @@ export class Game {
     }
     
     generateFood() {
-        const foodCount = Config.FOOD_COUNT;
+        const foodCount = CONFIG.FOOD_COUNT;
         
         for (let i = 0; i < foodCount; i++) {
             this.spawnFood();
@@ -517,14 +517,14 @@ export class Game {
     spawnFood() {
         const x = Utils.randomBetween(this.worldBounds.left, this.worldBounds.right);
         const y = Utils.randomBetween(this.worldBounds.top, this.worldBounds.bottom);
-        const mass = Utils.randomBetween(Config.FOOD_MIN_MASS, Config.FOOD_MAX_MASS);
+        const mass = Utils.randomBetween(CONFIG.FOOD_MIN_MASS, CONFIG.FOOD_MAX_MASS);
         
         const food = new Food(x, y, mass);
         this.food.push(food);
     }
     
     maintainFoodCount() {
-        while (this.food.length < Config.FOOD_COUNT) {
+        while (this.food.length < CONFIG.FOOD_COUNT) {
             this.spawnFood();
         }
     }
@@ -566,7 +566,7 @@ export class Game {
         }
         
         // Render debug info if enabled
-        if (Config.DEBUG_MODE) {
+        if (CONFIG.DEBUG_MODE) {
             this.renderDebugInfo();
         }
     }
