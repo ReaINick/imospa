@@ -1,6 +1,6 @@
 // systems/PrestigeSystem.js
 
-import { EventSystem } from '../core/EventSystem.js';
+import { gameEvents } from '../core/EventSystem.js';
 import { CONFIG } from '../core/Config.js';
 
 export class PrestigeSystem {
@@ -38,7 +38,7 @@ export class PrestigeSystem {
             }
         };
         
-        EventSystem.on('levelUp', this.checkPrestigeAvailability.bind(this));
+        gameEvents.on('levelUp', this.checkPrestigeAvailability.bind(this));
     }
     
     canPrestige(player) {
@@ -92,7 +92,7 @@ export class PrestigeSystem {
         player.coinMultiplier = this.calculateCoinMultiplier(player.prestigeLevel);
         player.expMultiplier = this.calculateExpMultiplier(player.prestigeLevel);
         
-        EventSystem.emit('prestigeCompleted', {
+        gameEvents.emit('prestigeCompleted', {
             player,
             prestigeLevel: player.prestigeLevel,
             prestigePoints: rewards.prestigePoints
@@ -116,7 +116,7 @@ export class PrestigeSystem {
             player.prestigePoints -= prestigePointsNeeded;
             player.platinumCoins += amount;
             
-            EventSystem.emit('prestigePointsExchanged', {
+            gameEvents.emit('prestigePointsExchanged', {
                 player,
                 platinumCoinsGained: amount,
                 prestigePointsSpent: prestigePointsNeeded
@@ -149,7 +149,7 @@ export class PrestigeSystem {
         player.prestigePoints -= cost;
         player.prestigeUpgrades[upgradeId] = currentLevel + 1;
         
-        EventSystem.emit('prestigeUpgradePurchased', {
+        gameEvents.emit('prestigeUpgradePurchased', {
             player,
             upgradeId,
             newLevel: currentLevel + 1,
@@ -182,7 +182,7 @@ export class PrestigeSystem {
     
     checkPrestigeAvailability(data) {
         if (data.player.level >= this.prestigeRequirement) {
-            EventSystem.emit('prestigeAvailable', { player: data.player });
+            gameEvents.emit('prestigeAvailable', { player: data.player });
         }
     }
     
