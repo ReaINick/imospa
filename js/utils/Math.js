@@ -243,4 +243,32 @@ export class MathUtils {
             y: Math.sin(angle) * magnitude
         };
     }
+    
+    // MISSING METHOD - Add this to fix PhysicsEngine
+    static randomAngle() {
+        return Math.random() * Math.PI * 2;
+    }
+    
+    // Additional utility methods for compatibility
+    static distance(x1, y1, x2, y2) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+    
+    static random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+    
+    static randomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+    
+    static degrees(radians) {
+        return radians * (180 / Math.PI);
+    }
+    
+    static radians(degrees) {
+        return degrees * (Math.PI / 180);
+    }
 }
