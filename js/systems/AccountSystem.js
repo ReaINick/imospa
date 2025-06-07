@@ -1,6 +1,6 @@
 // AccountSystem.js - Account management and persistence
 import { Utils } from '../utils/Utils.js';
-import { EventSystem } from '../core/EventSystem.js';
+import { gameEvents } from '../core/EventSystem.js';
 
 export class AccountSystem {
     constructor() {
@@ -26,7 +26,7 @@ export class AccountSystem {
         this.currentAccount = accountData;
         this.saveAccountLocally();
         
-        EventSystem.emit('accountCreated', { account: this.currentAccount });
+        gameEvents.emit('accountCreated', { account: this.currentAccount });
         return accountData;
     }
 
@@ -37,7 +37,7 @@ export class AccountSystem {
                 this.currentAccount = this.migrateOldSave(accountData);
                 this.setCurrentAccount();
                 this.checkDailyLogin();
-                EventSystem.emit('accountLoaded', { account: this.currentAccount });
+                gameEvents.emit('accountLoaded', { account: this.currentAccount });
                 return true;
             }
         } catch (error) {
@@ -180,7 +180,7 @@ export class AccountSystem {
         this.writeToStorage(compressedData);
         
         this.sessionData.lastSaveTime = Date.now();
-        EventSystem.emit('accountSaved', { account: this.currentAccount });
+        gameEvents.emit('accountSaved', { account: this.currentAccount });
     }
 
     retrieveAccountData(accountId = null) {
@@ -225,7 +225,7 @@ export class AccountSystem {
         this.updateBestScores(sessionData);
         this.saveProgressionData();
         
-        EventSystem.emit('sessionTracked', { sessionData, rewards });
+        gameEvents.emit('sessionTracked', { sessionData, rewards });
         return rewards;
     }
 
@@ -285,12 +285,12 @@ export class AccountSystem {
         // Update personal bests
         if (sessionData.finalMass > this.currentAccount.statistics.highestMass) {
             this.currentAccount.statistics.highestMass = sessionData.finalMass;
-            EventSystem.emit('newPersonalBest', { type: 'mass', value: sessionData.finalMass });
+            gameEvents.emit('newPersonalBest', { type: 'mass', value: sessionData.finalMass });
         }
         
         if (sessionData.finalLevel > this.currentAccount.statistics.highestLevel) {
             this.currentAccount.statistics.highestLevel = sessionData.finalLevel;
-            EventSystem.emit('newPersonalBest', { type: 'level', value: sessionData.finalLevel });
+            gameEvents.emit('newPersonalBest', { type: 'level', value: sessionData.finalLevel });
         }
     }
 
@@ -326,7 +326,7 @@ export class AccountSystem {
         
         this.currentAccount.lastLogin = Date.now();
         
-        EventSystem.emit('dailyLogin', { 
+        gameEvents.emit('dailyLogin', { 
             streak: this.currentAccount.loginStreak,
             rewards: rewards
         });
@@ -374,14 +374,14 @@ export class AccountSystem {
 
     updateLeaderboards() {
         // Update global leaderboards (would be server-side in real implementation)
-        EventSystem.emit('leaderboardUpdate', {
+        gameEvents.emit('leaderboardUpdate', {
             player: this.currentAccount.username,
             stats: this.currentAccount.statistics
         });
     }
 
     triggerStatEvents(statType, value) {
-        EventSystem.emit('statUpdated', { statType, value, newTotal: this.currentAccount.statistics[statType] });
+        gameEvents.emit('statUpdated', { statType, value, newTotal: this.currentAccount.statistics[statType] });
         
         // Trigger milestone events
         const total = this.currentAccount.statistics[statType];
@@ -389,7 +389,7 @@ export class AccountSystem {
         
         for (const milestone of milestones) {
             if (total - value < milestone && total >= milestone) {
-                EventSystem.emit('milestone', { statType, milestone });
+                gameEvents.emit('milestone', { statType, milestone });
                 break;
             }
         }
@@ -397,7 +397,7 @@ export class AccountSystem {
 
     setCurrentAccount() {
         if (this.currentAccount) {
-            EventSystem.emit('accountSet', { account: this.currentAccount });
+            gameEvents.emit('accountSet', { account: this.currentAccount });
         }
     }
 
@@ -451,7 +451,7 @@ export class AccountSystem {
         
         this.currentAccount.settings = { ...this.currentAccount.settings, ...settings };
         this.saveAccountLocally();
-        EventSystem.emit('settingsUpdated', { settings: this.currentAccount.settings });
+        gameEvents.emit('settingsUpdated', { settings: this.currentAccount.settings });
         return true;
     }
 
@@ -477,7 +477,7 @@ export class AccountSystem {
             if (this.validateAccountData(accountData)) {
                 this.currentAccount = this.migrateOldSave(accountData);
                 this.saveAccountLocally();
-                EventSystem.emit('accountImported', { account: this.currentAccount });
+                gameEvents.emit('accountImported', { account: this.currentAccount });
                 return true;
             }
         } catch (error) {
@@ -595,7 +595,7 @@ class AchievementSystem {
         }
 
         if (newUnlocks.length > 0) {
-            EventSystem.emit('achievementsUnlocked', { achievements: newUnlocks });
+            gameEvents.emit('achievementsUnlocked', { achievements: newUnlocks });
         }
     }
 
@@ -613,7 +613,7 @@ class AchievementSystem {
             account.statistics.platinumCoinsEarned += achievement.reward.platinumCoins;
         }
 
-        EventSystem.emit('achievementUnlocked', { achievement });
+        gameEvents.emit('achievementUnlocked', { achievement });
     }
 
     getAchievementProgress(account, achievementId) {
