@@ -9,7 +9,7 @@ export class PowerupSystem {
         this.activePowerups = new Map();
         this.powerupCooldowns = new Map();
         
-        // Powerup definitions
+        // Powerup definitions - exactly what UIManager expects
         this.powerups = {
             recombine: {
                 id: 'recombine',
@@ -70,16 +70,32 @@ export class PowerupSystem {
         for (const powerupId of Object.keys(this.powerups)) {
             this.powerupCooldowns.set(powerupId, 0);
         }
+        
+        // Listen for game events
+        this.setupEventListeners();
+    }
+    
+    setupEventListeners() {
+        // Listen for player damage to apply mass shield
+        gameEvents.on('playerDamaged', (data) => {
+            this.handlePlayerDamaged(data.player, data.damage);
+        });
+        
+        // Listen for player split to apply split boost
+        gameEvents.on('playerSplit', (data) => {
+            this.handlePlayerSplit(data.player, data.cells);
+        });
     }
     
     update(deltaTime, currentTime) {
         // Update active powerup effects
         this.updateActivePowerups(currentTime);
         
-        // Update cooldowns
+        // Update cooldowns (they're timestamp-based, so no active update needed)
         this.updateCooldowns(currentTime);
     }
     
+    // CORE METHOD: Check if player can use a powerup (called by UIManager)
     canUsePowerup(player, powerupId) {
         const powerup = this.powerups[powerupId];
         if (!powerup) return false;
@@ -97,12 +113,13 @@ export class PowerupSystem {
             case 'recombine':
                 return player.cells && player.cells.length > 1;
             case 'splitBoost':
-                return player.totalMass >= CONFIG.physics.minSplitMass;
+                return player.totalMass >= (CONFIG.physics?.minSplitMass || 35);
             default:
                 return true;
         }
     }
     
+    // CORE METHOD: Use a powerup (called by UIManager)
     usePowerup(player, powerupId, mouseX = 0, mouseY = 0) {
         if (!this.canUsePowerup(player, powerupId)) {
             return false;
@@ -124,7 +141,7 @@ export class PowerupSystem {
         const success = this.executePowerup(player, powerupId, mouseX, mouseY);
         
         if (success) {
-            // Trigger events
+            // Trigger events for UI and effects
             gameEvents.emit('powerupUsed', {
                 player: player,
                 powerupId: powerupId,
@@ -138,6 +155,19 @@ export class PowerupSystem {
         return success;
     }
     
+    // CORE METHOD: Get cooldown remaining (called by UIManager)
+    getCooldownRemaining(powerupId) {
+        const cooldownEnd = this.powerupCooldowns.get(powerupId) || 0;
+        const remaining = Math.max(0, cooldownEnd - Date.now());
+        return remaining;
+    }
+    
+    // CORE METHOD: Get all powerups (called by UIManager)
+    getAllPowerups() {
+        return this.powerups;
+    }
+    
+    // Execute specific powerup effects
     executePowerup(player, powerupId, mouseX, mouseY) {
         switch (powerupId) {
             case 'recombine':
@@ -155,14 +185,15 @@ export class PowerupSystem {
         }
     }
     
+    // RECOMBINE POWERUP - Complete implementation
     executeRecombinePowerup(player, mouseX, mouseY) {
-        if (player.cells.length <= 1) return false;
+        if (!player.cells || player.cells.length <= 1) return false;
         
         // Calculate direction from player center to mouse
         const centerMass = this.getPlayerCenterMass(player);
         const direction = this.calculateMouseDirection(centerMass, mouseX, mouseY);
         
-        // Start recombine sequence
+        // Start recombine sequence with directional momentum
         this.startRecombineSequence(player, direction);
         
         return true;
@@ -225,9 +256,14 @@ export class PowerupSystem {
         const cellsToMerge = cells.slice(1);
         
         // Apply directional momentum to main cell
-        const totalMomentumX = cells.reduce((sum, cell) => sum + cell.velocity.x * cell.mass, 0);
-        const totalMomentumY = cells.reduce((sum, cell) => sum + cell.velocity.y * cell.mass, 0);
+        const totalMomentumX = cells.reduce((sum, cell) => sum + (cell.velocity?.x || 0) * cell.mass, 0);
+        const totalMomentumY = cells.reduce((sum, cell) => sum + (cell.velocity?.y || 0) * cell.mass, 0);
         const totalMass = player.totalMass;
+        
+        // Ensure velocity object exists
+        if (!mainCell.velocity) {
+            mainCell.velocity = { x: 0, y: 0 };
+        }
         
         // Set main cell velocity with retained momentum and directional boost
         mainCell.velocity.x = (totalMomentumX / totalMass) * momentumRetention + (targetX - mainCell.x) * 0.1;
@@ -240,18 +276,28 @@ export class PowerupSystem {
         
         // Update player cells array
         player.cells = [mainCell];
-        player.updateTotalMass();
-        mainCell.updateRadius();
+        if (typeof player.updateTotalMass === 'function') {
+            player.updateTotalMass();
+        } else {
+            player.totalMass = mainCell.mass;
+        }
+        
+        if (typeof mainCell.updateRadius === 'function') {
+            mainCell.updateRadius();
+        } else {
+            mainCell.radius = Math.sqrt(mainCell.mass / Math.PI);
+        }
         
         // Reset recombine timer
-        player.recombineTime = Date.now() + CONFIG.physics.recombineDelay;
+        player.recombineTime = Date.now() + (CONFIG.physics?.recombineDelay || 15000);
         
         // Create merge effect
         this.createMergeEffect(mainCell, cellsToMerge);
     }
     
+    // SPEED BOOST POWERUP
     executeSpeedBoost(player) {
-        const powerupId = 'speedBoost_' + player.id;
+        const powerupId = 'speedBoost_' + (player.id || player.name);
         const duration = this.powerups.speedBoost.duration;
         
         this.activePowerups.set(powerupId, {
@@ -265,8 +311,9 @@ export class PowerupSystem {
         return true;
     }
     
+    // MASS SHIELD POWERUP
     executeMassShield(player) {
-        const powerupId = 'massShield_' + player.id;
+        const powerupId = 'massShield_' + (player.id || player.name);
         const duration = this.powerups.massShield.duration;
         
         this.activePowerups.set(powerupId, {
@@ -280,8 +327,9 @@ export class PowerupSystem {
         return true;
     }
     
+    // SPLIT BOOST POWERUP
     executeSplitBoost(player) {
-        const powerupId = 'splitBoost_' + player.id;
+        const powerupId = 'splitBoost_' + (player.id || player.name);
         const duration = this.powerups.splitBoost.duration;
         
         this.activePowerups.set(powerupId, {
@@ -295,8 +343,9 @@ export class PowerupSystem {
         return true;
     }
     
+    // MAGNETISM POWERUP
     executeMagnetism(player) {
-        const powerupId = 'magnetism_' + player.id;
+        const powerupId = 'magnetism_' + (player.id || player.name);
         const duration = this.powerups.magnetism.duration;
         
         this.activePowerups.set(powerupId, {
@@ -311,6 +360,7 @@ export class PowerupSystem {
         return true;
     }
     
+    // Update active powerups
     updateActivePowerups(currentTime) {
         const toRemove = [];
         
@@ -338,7 +388,15 @@ export class PowerupSystem {
             case 'magnetism':
                 this.updateMagnetismEffect(powerup);
                 break;
-            // Other powerups don't need continuous updates
+            case 'speedBoost':
+                // Speed boost is passive - checked by movement system
+                break;
+            case 'massShield':
+                // Mass shield is passive - checked during damage calculation
+                break;
+            case 'splitBoost':
+                // Split boost is passive - checked during splitting
+                break;
         }
     }
     
@@ -347,7 +405,10 @@ export class PowerupSystem {
         const magnetRadius = powerup.radius;
         const magnetForce = powerup.force;
         
-        // Find nearby food
+        // Only process if game has quadTree
+        if (!this.game.quadTree) return;
+        
+        // Find nearby food for each player cell
         for (const cell of player.cells) {
             const nearbyFood = this.game.quadTree.queryRange(
                 cell.x - magnetRadius,
@@ -364,6 +425,12 @@ export class PowerupSystem {
                     
                     if (distance < magnetRadius && distance > 0) {
                         const force = magnetForce / (distance * distance + 1);
+                        
+                        // Ensure velocity object exists
+                        if (!item.velocity) {
+                            item.velocity = { x: 0, y: 0 };
+                        }
+                        
                         item.velocity.x += (dx / distance) * force;
                         item.velocity.y += (dy / distance) * force;
                     }
@@ -385,13 +452,14 @@ export class PowerupSystem {
         // No active cleanup needed
     }
     
+    // Visual effects
     showPowerupEffect(player, powerup) {
         // Create visual effect for powerup activation
         gameEvents.emit('showPowerupEffect', {
             player: player,
             powerup: powerup,
-            x: player.x,
-            y: player.y
+            x: player.x || (player.cells && player.cells[0] ? player.cells[0].x : 0),
+            y: player.y || (player.cells && player.cells[0] ? player.cells[0].y : 0)
         });
     }
     
@@ -403,7 +471,7 @@ export class PowerupSystem {
         });
     }
     
-    // Helper methods for other systems
+    // Helper methods for other systems to check powerup states
     hasActivePowerup(player, type) {
         for (const [_, powerup] of this.activePowerups) {
             if (powerup.player === player && powerup.type === type) {
@@ -431,16 +499,6 @@ export class PowerupSystem {
         return 0;
     }
     
-    getCooldownRemaining(powerupId) {
-        const cooldownEnd = this.powerupCooldowns.get(powerupId) || 0;
-        const remaining = Math.max(0, cooldownEnd - Date.now());
-        return remaining;
-    }
-    
-    getAllPowerups() {
-        return this.powerups;
-    }
-    
     getActivePowerupsForPlayer(player) {
         const activePowerups = [];
         
@@ -454,5 +512,62 @@ export class PowerupSystem {
         }
         
         return activePowerups;
+    }
+    
+    // Event handlers for game events
+    handlePlayerDamaged(player, damage) {
+        // Apply mass shield protection if active
+        if (this.hasActivePowerup(player, 'massShield')) {
+            const protection = this.getPowerupProtection(player, 'massShield');
+            const reducedDamage = damage * (1 - protection);
+            
+            // Emit event with reduced damage
+            gameEvents.emit('damageReduced', {
+                player: player,
+                originalDamage: damage,
+                finalDamage: reducedDamage,
+                protection: protection
+            });
+            
+            return reducedDamage;
+        }
+        
+        return damage;
+    }
+    
+    handlePlayerSplit(player, cells) {
+        // Apply split boost if active
+        if (this.hasActivePowerup(player, 'splitBoost')) {
+            const multiplier = this.getPowerupMultiplier(player, 'splitBoost');
+            
+            // Boost the velocity of newly split cells
+            for (const cell of cells) {
+                if (cell.velocity) {
+                    cell.velocity.x *= multiplier;
+                    cell.velocity.y *= multiplier;
+                }
+            }
+        }
+    }
+    
+    // Method to get speed multiplier for movement system
+    getSpeedMultiplier(player) {
+        return this.getPowerupMultiplier(player, 'speedBoost');
+    }
+    
+    // Method to get split multiplier for physics system
+    getSplitMultiplier(player) {
+        return this.getPowerupMultiplier(player, 'splitBoost');
+    }
+    
+    // Method to check if player has damage reduction
+    getDamageReduction(player) {
+        return this.getPowerupProtection(player, 'massShield');
+    }
+    
+    // Cleanup method
+    cleanup() {
+        this.activePowerups.clear();
+        this.powerupCooldowns.clear();
     }
 }
