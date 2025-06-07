@@ -125,7 +125,7 @@ class Main {
     }
     
     async initializeCanvas() {
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('game-canvas');
         if (!canvas) {
             throw new Error('Game canvas not found');
         }
@@ -674,7 +674,7 @@ class Main {
     }
     
     onMouseMove(event) {
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('game-canvas');
         const rect = canvas.getBoundingClientRect();
         
         this.input.mouse.x = event.clientX - rect.left;
@@ -827,7 +827,7 @@ class Main {
     }
     
     resizeCanvas() {
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('game-canvas');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         
