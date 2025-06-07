@@ -1,5 +1,5 @@
 // Advanced math utilities for game physics and calculations
-export class MathUtils {
+export class GameMath {
     // Vector operations for physics calculations
     static createVector(x = 0, y = 0) {
         return { x, y };
