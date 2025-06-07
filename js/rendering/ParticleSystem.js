@@ -6,7 +6,7 @@ export class ParticleSystem {
     constructor() {
         this.particles = [];
         this.particlePool = [];
-        this.maxParticles = Config.PARTICLES.MAX_PARTICLES;
+        this.maxParticles = CONFIG.PARTICLES.MAX_PARTICLES;
         
         // Pre-allocate particle pool for performance
         this.initializeParticlePool();
