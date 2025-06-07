@@ -1,4 +1,3 @@
-
 // Game Configuration Constants
 export const CONFIG = {
     // Canvas settings
@@ -32,7 +31,6 @@ export const CONFIG = {
         MIN_SPEED: 50,
         MAX_CELL_MASS: 10000
     },
-    
     
     // Player settings
     PLAYER: {
@@ -81,6 +79,15 @@ export const CONFIG = {
         ABSORPTION_XP_BASE: 10,
         LEVEL_XP_MULTIPLIER: 1.15,
         PRESTIGE_LEVEL_REQUIREMENT: 50
+    },
+    
+    // Save system settings - ADDED MISSING SECTION
+    SAVE: {
+        AUTO_SAVE_INTERVAL: 60000, // Auto-save every 60 seconds (60000ms)
+        MAX_SAVE_SLOTS: 5,
+        COMPRESSION_ENABLED: true,
+        BACKUP_ENABLED: true,
+        SAVE_VERSION: '1.0.0'
     },
     
     // Shop prices
