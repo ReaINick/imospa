@@ -1,5 +1,5 @@
 // js/systems/CurrencyManager.js
-import { Config } from '../core/Config.js';
+import { CONFIG } from '../core/Config.js';
 import { EventSystem } from '../core/EventSystem.js';
 import { Utils } from '../utils/Utils.js';
 
