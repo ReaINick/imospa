@@ -1,9 +1,9 @@
-import { EventSystem } from '../core/EventSystem.js';
+import { gameEvents } from '../core/EventSystem.js';
 import { Utils } from '../utils/Utils.js';
 
 export class AchievementSystem {
     constructor() {
-        this.eventSystem = EventSystem.getInstance();
+        this.eventSystem = gameEvents;
         this.achievements = this.initializeAchievements();
         this.playerAchievements = new Map(); // playerId -> Set of achieved IDs
         this.progressTracking = new Map(); // playerId -> progress data
@@ -289,52 +289,52 @@ export class AchievementSystem {
     
     setupEventListeners() {
         // Mass achievements
-        this.eventSystem.on('playerMassChanged', (data) => {
+        gameEvents.on('playerMassChanged', (data) => {
             this.checkMassAchievements(data.player, data.totalMass);
         });
         
         // Food eating achievements
-        this.eventSystem.on('foodAbsorbed', (data) => {
+        gameEvents.on('foodAbsorbed', (data) => {
             this.incrementProgress(data.player, 'food_eaten');
         });
         
         // PvP achievements
-        this.eventSystem.on('playerDefeated', (data) => {
+        gameEvents.on('playerDefeated', (data) => {
             this.incrementProgress(data.killer, 'players_defeated');
         });
         
         // Survival achievements
-        this.eventSystem.on('gameTimeUpdate', (data) => {
+        gameEvents.on('gameTimeUpdate', (data) => {
             this.checkSurvivalAchievements(data.player, data.survivalTime);
         });
         
         // Splitting achievements
-        this.eventSystem.on('playerSplit', (data) => {
+        gameEvents.on('playerSplit', (data) => {
             this.incrementProgress(data.player, 'splits_performed');
         });
         
         // Powerup achievements
-        this.eventSystem.on('powerupUsed', (data) => {
+        gameEvents.on('powerupUsed', (data) => {
             this.incrementPowerupProgress(data.player, data.powerupType);
         });
         
         // Leaderboard achievements
-        this.eventSystem.on('leaderboardUpdate', (data) => {
+        gameEvents.on('leaderboardUpdate', (data) => {
             this.checkLeaderboardAchievements(data.leaderboard);
         });
         
         // Currency achievements
-        this.eventSystem.on('coinsEarned', (data) => {
+        gameEvents.on('coinsEarned', (data) => {
             this.checkCurrencyAchievements(data.player);
         });
         
         // Shop achievements
-        this.eventSystem.on('shopPurchase', (data) => {
+        gameEvents.on('shopPurchase', (data) => {
             this.incrementProgress(data.player, 'shop_purchases');
         });
         
         // Level achievements
-        this.eventSystem.on('playerLevelUp', (data) => {
+        gameEvents.on('playerLevelUp', (data) => {
             this.checkLevelAchievements(data.player, data.newLevel);
         });
     }
@@ -470,7 +470,7 @@ export class AchievementSystem {
         this.awardRewards(player, achievement.reward);
         
         // Emit achievement unlocked event
-        this.eventSystem.emit('achievementUnlocked', {
+        gameEvents.emit('achievementUnlocked', {
             player: player,
             achievement: achievement
         });
@@ -497,7 +497,7 @@ export class AchievementSystem {
         }
         
         // Emit reward event
-        this.eventSystem.emit('rewardsAwarded', {
+        gameEvents.emit('rewardsAwarded', {
             player: player,
             reward: reward
         });
@@ -516,7 +516,7 @@ export class AchievementSystem {
             timestamp: Date.now()
         };
         
-        this.eventSystem.emit('showNotification', notification);
+        gameEvents.emit('showNotification', notification);
     }
     
     hasAchievement(player, achievementId) {
@@ -597,7 +597,7 @@ export class AchievementSystem {
         
         // In a real implementation, this would save to localStorage or server
         // For now, we'll emit an event for the save system to handle
-        this.eventSystem.emit('saveAchievementProgress', {
+        gameEvents.emit('saveAchievementProgress', {
             playerId: player.id,
             data: saveData
         });
