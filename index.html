@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agar.io Clone</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/ui.css">
+    <link rel="stylesheet" href="styles/animations.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>Loading Game...</h2>
+            <div class="loading-bar">
+                <div class="loading-progress" id="loading-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Menu -->
+    <div id="main-menu" class="main-menu">
+        <div class="menu-background"></div>
+        <div class="menu-content">
+            <h1 class="game-title">AGAR.IO CLONE</h1>
+            <div class="menu-form">
+                <input type="text" id="player-name" placeholder="Enter your name" maxlength="20" class="name-input">
+                <button id="play-button" class="play-button">PLAY</button>
+                <div class="menu-buttons">
+                    <button id="shop-button" class="menu-btn">SHOP</button>
+                    <button id="leaderboard-button" class="menu-btn">LEADERBOARD</button>
+                    <button id="settings-button" class="menu-btn">SETTINGS</button>
+                </div>
+            </div>
+            <div class="account-info" id="account-info">
+                <div class="currency-display">
+                    <span class="coins">💰 <span id="coin-count">0</span></span>
+                    <span class="platinum">💎 <span id="platinum-count">0</span></span>
+                </div>
+                <div class="level-display">
+                    Level <span id="player-level">1</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Canvas Container -->
+    <div id="game-container" class="game-container hidden">
+        <canvas id="game-canvas" class="game-canvas"></canvas>
+        
+        <!-- Game UI Overlay -->
+        <div id="game-ui" class="game-ui">
+            <!-- HUD -->
+            <div id="hud" class="hud">
+                <div class="hud-top">
+                    <div class="player-info">
+                        <div class="player-name" id="player-name-display"></div>
+                        <div class="player-mass" id="player-mass">Mass: 20</div>
+                        <div class="player-level-hud">Level: <span id="player-level-hud">1</span></div>
+                    </div>
+                    <div class="currency-hud">
+                        <span class="coins-hud">💰 <span id="coins-hud">0</span></span>
+                        <span class="platinum-hud">💎 <span id="platinum-hud">0</span></span>
+                    </div>
+                </div>
+                
+                <div class="hud-center">
+                    <!-- Powerup Buttons -->
+                    <div class="powerup-bar" id="powerup-bar">
+                        <button class="powerup-btn" id="recombine-btn" title="Recombine (R)">🔄</button>
+                        <button class="powerup-btn" id="speed-boost-btn" title="Speed Boost (Q)">⚡</button>
+                        <button class="powerup-btn" id="mass-shield-btn" title="Mass Shield (E)">🛡️</button>
+                    </div>
+                </div>
+                
+                <div class="hud-bottom">
+                    <!-- Experience Bar -->
+                    <div class="experience-bar" id="experience-bar">
+                        <div class="exp-fill" id="exp-fill"></div>
+                        <span class="exp-text" id="exp-text">0 / 100 XP</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Leaderboard -->
+            <div id="game-leaderboard" class="game-leaderboard">
+                <h3>Leaderboard</h3>
+                <ol id="leaderboard-list"></ol>
+            </div>
+            
+            <!-- Minimap -->
+            <div id="minimap" class="minimap">
+                <canvas id="minimap-canvas" width="150" height="150"></canvas>
+            </div>
+        </div>
+        
+        <!-- Game Menu Button -->
+        <button id="menu-toggle" class="menu-toggle">☰</button>
+    </div>
+
+    <!-- Shop Modal -->
+    <div id="shop-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Shop</h2>
+                <button class="modal-close" id="shop-close">&times;</button>
+            </div>
+            <div class="shop-content" id="shop-content">
+                <!-- Shop content will be populated by Shop.js -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="modal-close" id="settings-close">&times;</button>
+            </div>
+            <div class="settings-content">
+                <div class="setting-group">
+                    <label>Music Volume</label>
+                    <input type="range" id="music-volume" min="0" max="100" value="50">
+                </div>
+                <div class="setting-group">
+                    <label>Sound Effects</label>
+                    <input type="range" id="sfx-volume" min="0" max="100" value="75">
+                </div>
+                <div class="setting-group">
+                    <label>Show Grid</label>
+                    <input type="checkbox" id="show-grid" checked>
+                </div>
+                <div class="setting-group">
+                    <label>Show Names</label>
+                    <input type="checkbox" id="show-names" checked>
+                </div>
+                <div class="setting-group">
+                    <label>Graphics Quality</label>
+                    <select id="graphics-quality">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Game Over</h2>
+            </div>
+            <div class="game-over-content">
+                <div class="final-stats">
+                    <div class="stat">Final Mass: <span id="final-mass">0</span></div>
+                    <div class="stat">Time Survived: <span id="time-survived">0s</span></div>
+                    <div class="stat">Cells Consumed: <span id="cells-consumed">0</span></div>
+                    <div class="stat">Coins Earned: <span id="coins-earned">0</span></div>
+                </div>
+                <div class="game-over-buttons">
+                    <button id="play-again-btn" class="play-button">Play Again</button>
+                    <button id="main-menu-btn" class="menu-btn">Main Menu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
