@@ -5,7 +5,7 @@ import { GameLoop } from './core/GameLoop.js';
 import { PhysicsEngine } from './physics/PhysicsEngine.js';
 import { Renderer } from './rendering/Renderer.js';
 import Camera from './rendering/Camera.js';
-import { ViewportManager } from './rendering/ViewportManager.js';
+import ViewportManager from './rendering/ViewportManager.js';
 import { ParticleSystem } from './rendering/ParticleSystem.js';
 import { CollisionDetection } from './physics/CollisionDetection.js';
 import { Movement } from './physics/Movement.js';
