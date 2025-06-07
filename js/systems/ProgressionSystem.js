@@ -1,6 +1,6 @@
 // js/systems/ProgressionSystem.js
 import { CONFIG } from '../core/Config.js';
-import { EventSystem } from '../core/EventSystem.js';
+import { gameEvents } from '../core/EventSystem.js'; // Import the instance, not the class
 
 export class ProgressionSystem {
     constructor() {
@@ -164,19 +164,20 @@ export class ProgressionSystem {
     }
     
     setupEventListeners() {
-        EventSystem.on('playerAbsorbedCell', (data) => {
+        // Use the gameEvents instance instead of EventSystem static methods
+        gameEvents.on('playerAbsorbedCell', (data) => {
             this.handleAbsorption(data.player, data.absorbed);
         });
         
-        EventSystem.on('playerAbsorbedFood', (data) => {
+        gameEvents.on('playerAbsorbedFood', (data) => {
             this.handleFoodAbsorption(data.player, data.food);
         });
         
-        EventSystem.on('playerSplit', (data) => {
+        gameEvents.on('playerSplit', (data) => {
             this.handleSplit(data.player);
         });
         
-        EventSystem.on('gameTimeUpdate', (data) => {
+        gameEvents.on('gameTimeUpdate', (data) => {
             this.handleSurvivalTime(data.player, data.survivalTime);
         });
     }
@@ -227,7 +228,7 @@ export class ProgressionSystem {
             this.levelUp(player);
         }
         
-        EventSystem.emit('experienceGained', { 
+        gameEvents.emit('experienceGained', { 
             player, 
             xp, 
             totalXP: player.experience 
@@ -254,7 +255,7 @@ export class ProgressionSystem {
         this.updateAchievementProgress('level_10', player.level);
         this.updateAchievementProgress('level_25', player.level);
         
-        EventSystem.emit('playerLevelUp', { 
+        gameEvents.emit('playerLevelUp', { 
             player, 
             oldLevel, 
             newLevel: player.level,
@@ -331,7 +332,7 @@ export class ProgressionSystem {
         
         achievement.completed = true;
         
-        EventSystem.emit('achievementCompleted', { 
+        gameEvents.emit('achievementCompleted', { 
             achievement,
             reward: achievement.reward
         });
