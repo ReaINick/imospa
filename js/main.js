@@ -144,15 +144,19 @@ class Main {
     }
     
 initializeUI() {
-    // Pass 'this' (the game instance) to UIManager
+    // Pass 'this' (the game instance) to UIManager and Shop
     this.uiManager = new UIManager(this);
-    this.shop = new Shop();
+    this.shop = new Shop(this); // Pass game instance to Shop
     this.hud = new HUD();
     this.leaderboard = new Leaderboard();
     
     // Connect systems
-    this.shop.setCurrencyManager(this.currencyManager);
-    this.hud.setProgressionSystem(this.progressionSystem);
+    if (this.shop.setCurrencyManager) {
+        this.shop.setCurrencyManager(this.currencyManager);
+    }
+    if (this.hud.setProgressionSystem) {
+        this.hud.setProgressionSystem(this.progressionSystem);
+    }
 }
     
     initializeGameSystems() {
