@@ -955,22 +955,23 @@ hideLoadingScreen() {
     // UI state management
 showMainMenu() {
     this.gameState = 'menu';
-    
-    // Hide loading screen if it's still showing
-    this.hideLoadingScreen();
+    this.hideLoadingScreen(); // Add this line
     
     // Show main menu
-    if (this.uiManager) {
-        this.uiManager.showMenu('main');
-    }
-    
-    // Make sure game container is hidden when showing menu
+    const mainMenu = document.getElementById('main-menu');
     const gameContainer = document.getElementById('game-container');
+    
+    if (mainMenu) {
+        mainMenu.classList.remove('hidden');
+    }
     if (gameContainer) {
         gameContainer.classList.add('hidden');
     }
     
-    console.log('Main menu displayed');
+    // Initialize UI manager if it exists
+    if (this.uiManager && this.uiManager.showMenu) {
+        this.uiManager.showMenu('main');
+    }
 }
 
     toggleShop() {
