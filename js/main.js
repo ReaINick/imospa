@@ -1,49 +1,63 @@
 // js/main.js
-
-// 1. Import base utilities first to avoid dependency conflicts
-import { CONFIG } from './core/Config.js';
-import { Utils } from './utils/Utils.js';
-import { MathUtils } from './utils/Math.js';
-
-// 2. Core systems next
+// ============================================
+// CORE SYSTEMS (Load first - no dependencies)
+// ============================================
 import { EventSystem, gameEvents } from './core/EventSystem.js';
+import { CONFIG } from './core/Config.js';
 import { GameLoop } from './core/GameLoop.js';
 
-// 3. Physics and entities after config is available
+// ============================================
+// UTILITIES (Load early - minimal dependencies)
+// ============================================
+import { Utils } from './utils/Utils.js';
+import { MathUtils } from './utils/Math.js';
+import QuadTree from './utils/QuadTree.js';
+
+// ============================================
+// PHYSICS SYSTEMS (Load before entities)
+// ============================================
 import { PhysicsEngine } from './physics/PhysicsEngine.js';
 import { CollisionDetection } from './physics/CollisionDetection.js';
 import { Movement } from './physics/Movement.js';
 import { SplittingSystem } from './physics/Splitting.js';
 
-// 4. Entities — now safe to use CONFIG.CELL_COLORS
-import { Player } from './entities/Player.js';
-import { Bot } from './entities/Bot.js'; // Will extend Player safely now
-import { Food } from './entities/Food.js';
-import { Powerup } from './entities/Powerup.js';
-
-// 5. AI components
-import { BotManager } from './ai/BotManager.js'; // Safe to import now
-
-// 6. Rendering
-import Renderer from './rendering/Renderer.js';
+// ============================================
+// RENDERING SYSTEMS (Load before entities)
+// ============================================
+import { Renderer } from './rendering/Renderer.js';
 import Camera from './rendering/Camera.js';
 import ViewportManager from './rendering/ViewportManager.js';
 import { ParticleSystem } from './rendering/ParticleSystem.js';
 
-// 7. UI Components
-import UIManager from './ui/UIManager.js';
-import Shop from './ui/Shop.js';
-import HUD from './ui/HUD.js';
-import Leaderboard from './ui/Leaderboard.js';
+// ============================================
+// BASIC ENTITIES (Load before complex systems)
+// ============================================
+import { Food } from './entities/Food.js';
+import { Powerup } from './entities/Powerup.js';
+import { Player } from './entities/Player.js';
 
-// 8. Game systems
-import QuadTree from './utils/QuadTree.js';
+// ============================================
+// GAME SYSTEMS (Load after entities)
+// ============================================
 import { PowerupSystem } from './systems/PowerupSystem.js';
 import { ProgressionSystem } from './systems/ProgressionSystem.js';
 import { CurrencyManager } from './systems/CurrencyManager.js';
 import { SaveSystem } from './systems/SaveSystem.js';
 import { PrestigeSystem } from './systems/PrestigeSystem.js';
 import { AccountSystem } from './systems/AccountSystem.js';
+
+// ============================================
+// UI SYSTEMS (Load after game systems)
+// ============================================
+import { UIManager } from './ui/UIManager.js';
+import { Shop } from './ui/Shop.js';
+import { HUD } from './ui/HUD.js';
+import { Leaderboard } from './ui/Leaderboard.js';
+
+// ============================================
+// AI SYSTEMS (Load LAST - has most dependencies)
+// ============================================
+import { BotManager } from './ai/BotManager.js';
 
 class Main {
     constructor() {
@@ -85,7 +99,9 @@ class Main {
         this.saveSystem = new SaveSystem();
         this.prestigeSystem = new PrestigeSystem();
         this.accountSystem = new AccountSystem();
-        this.botManager = new BotManager(this);
+        
+        // AI systems - Initialize to null, will be created later
+        this.botManager = null;
         
         // Game entities
         this.player = null;
@@ -117,7 +133,7 @@ class Main {
             // Initialize UI systems
             this.initializeUI();
             
-            // Initialize game systems
+            // Initialize game systems (MUST be before BotManager)
             this.initializeGameSystems();
             
             // Setup event handlers
@@ -160,34 +176,40 @@ class Main {
         window.addEventListener('resize', () => this.resizeCanvas());
     }
     
-initializeUI() {
-    // Initialize UI components with proper dependencies
-    this.uiManager = new UIManager(this);
-    this.shop = new Shop(this); // Pass game instance to Shop
-    this.hud = new HUD(this); // Pass game instance to HUD
-    this.leaderboard = new Leaderboard();
-    
-    // Initialize HUD with canvas after it's created
-    if (this.canvas) {
-        this.hud.initialize(this.canvas);
+    initializeUI() {
+        // Initialize UI components with proper dependencies
+        this.uiManager = new UIManager(this);
+        this.shop = new Shop(this); // Pass game instance to Shop
+        this.hud = new HUD(this); // Pass game instance to HUD
+        this.leaderboard = new Leaderboard();
+        
+        // Initialize HUD with canvas after it's created
+        if (this.renderer && this.renderer.canvas) {
+            this.hud.initialize(this.renderer.canvas);
+        }
+        
+        // Connect systems
+        if (this.shop.setCurrencyManager) {
+            this.shop.setCurrencyManager(this.currencyManager);
+        }
+        if (this.hud.setProgressionSystem) {
+            this.hud.setProgressionSystem(this.progressionSystem);
+        }
+        
+        console.log('UI systems initialized');
     }
     
-    // Connect systems
-    if (this.shop.setCurrencyManager) {
-        this.shop.setCurrencyManager(this.currencyManager);
+    initializeGameSystems() {
+        // Initialize BotManager AFTER all other systems are ready
+        // This prevents circular dependency issues
+        this.botManager = new BotManager(this);
+        
+        // Initialize bot manager with world bounds
+        this.botManager.initialize(this.worldBounds);
+        
+        console.log('Game systems initialized');
     }
-    if (this.hud.setProgressionSystem) {
-        this.hud.setProgressionSystem(this.progressionSystem);
-    }
     
-    console.log('UI systems initialized');
-}
-    
-initializeGameSystems() {
-    
-    // Initialize bot manager
-    this.botManager.initialize(this.worldBounds);
-}
     setupGameEvents() {
         // Player progression events
         gameEvents.on('player.levelUp', (data) => {
@@ -246,8 +268,10 @@ initializeGameSystems() {
         // Generate initial powerups
         this.generatePowerups();
         
-        // Spawn bots
-        this.botManager.spawnInitialBots(CONFIG.BOTS.INITIAL_COUNT);
+        // Spawn bots (only if botManager is initialized)
+        if (this.botManager) {
+            this.botManager.spawnInitialBots(CONFIG.BOTS.INITIAL_COUNT);
+        }
     }
     
     startGame(playerName) {
@@ -311,8 +335,10 @@ initializeGameSystems() {
             // Update player
             this.updatePlayer(deltaTime);
             
-            // Update bots
-            this.botManager.update(deltaTime, this.quadTree);
+            // Update bots (only if botManager exists)
+            if (this.botManager) {
+                this.botManager.update(deltaTime, this.quadTree);
+            }
             
             // Update physics
             this.updatePhysics(deltaTime);
@@ -346,7 +372,8 @@ initializeGameSystems() {
         }
     }
     
-    populateQuadTree() {
+    
+     populateQuadTree() {
         // Add player cells
         if (this.player) {
             this.player.cells.forEach(cell => {
@@ -354,12 +381,14 @@ initializeGameSystems() {
             });
         }
         
-        // Add bot cells
-        this.botManager.bots.forEach(bot => {
-            bot.cells.forEach(cell => {
-                this.quadTree.insert(cell);
+        // Add bot cells (only if botManager exists)
+        if (this.botManager) {
+            this.botManager.bots.forEach(bot => {
+                bot.cells.forEach(cell => {
+                    this.quadTree.insert(cell);
+                });
             });
-        });
+        }
         
         // Add food
         this.food.forEach(food => {
@@ -404,11 +433,14 @@ initializeGameSystems() {
             });
         }
         
-        this.botManager.bots.forEach(bot => {
-            bot.cells.forEach(cell => {
-                this.physicsEngine.updateEntity(cell, deltaTime);
+        // Update bot physics (only if botManager exists)
+        if (this.botManager) {
+            this.botManager.bots.forEach(bot => {
+                bot.cells.forEach(cell => {
+                    this.physicsEngine.updateEntity(cell, deltaTime);
+                });
             });
-        });
+        }
     }
     
     updatePowerups(deltaTime) {
@@ -486,6 +518,8 @@ initializeGameSystems() {
     }
     
     handleBotCollisions() {
+        if (!this.botManager) return;
+        
         this.botManager.bots.forEach(bot => {
             bot.cells.forEach(cell => {
                 const nearby = this.quadTree.retrieve(cell.getBounds());
@@ -582,7 +616,7 @@ initializeGameSystems() {
         if (player === this.player) {
             // Player died - show game over
             this.gameOver();
-        } else {
+        } else if (this.botManager) {
             // Bot died - respawn or remove
             this.botManager.handleBotDeath(player);
         }
@@ -608,8 +642,10 @@ initializeGameSystems() {
             this.generatePowerups(1);
         }
         
-        // Maintain bot count
-        this.botManager.maintainBotCount();
+        // Maintain bot count (only if botManager exists)
+        if (this.botManager) {
+            this.botManager.maintainBotCount();
+        }
     }
     
     render() {
@@ -642,11 +678,14 @@ initializeGameSystems() {
             this.renderer.renderPlayer(this.player, this.camera);
         }
         
-        this.botManager.bots.forEach(bot => {
-            if (this.viewport.isPlayerVisible(bot)) {
-                this.renderer.renderPlayer(bot, this.camera);
-            }
-        });
+        // Render bots (only if botManager exists)
+        if (this.botManager) {
+            this.botManager.bots.forEach(bot => {
+                if (this.viewport.isPlayerVisible(bot)) {
+                    this.renderer.renderPlayer(bot, this.camera);
+                }
+            });
+        }
         
         // Render particles
         this.particles.render(this.renderer, this.camera);
@@ -823,7 +862,7 @@ initializeGameSystems() {
     getAllPlayers() {
         const players = [];
         if (this.player) players.push(this.player);
-        players.push(...this.botManager.bots);
+        if (this.botManager) players.push(...this.botManager.bots);
         return players.sort((a, b) => b.totalMass - a.totalMass);
     }
     
@@ -863,7 +902,7 @@ initializeGameSystems() {
         
         this.player.cells.forEach(cell => {
             if (cell.mass > CONFIG.PLAYER.MIN_EJECT_MASS) {
-                const direction = GameMath.getDirection(
+                const direction = MathUtils.getDirection(
                     cell.x, cell.y,
                     this.input.mouse.worldX, this.input.mouse.worldY
                 );
@@ -899,7 +938,7 @@ initializeGameSystems() {
         this.gameState = 'menu';
         this.uiManager.showMenu('main');
     }
-    
+
     toggleShop() {
         if (this.gameState === 'shop') {
             this.gameState = 'playing';
