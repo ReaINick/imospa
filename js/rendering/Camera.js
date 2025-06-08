@@ -2,6 +2,8 @@
 class Camera {
     constructor(canvas) {
         this.canvas = canvas;
+        this.width = canvas.width;
+        this.height = canvas.height;
         this.x = 0;
         this.y = 0;
         this.targetX = 0;
@@ -23,6 +25,26 @@ class Camera {
         this.maxZoom = 2.0;
         this.defaultZoom = 1.0;
         this.massZoomFactor = 0.001;
+    }
+
+    // Handle canvas resize - ADDED METHOD TO FIX THE ERROR
+    resize() {
+        if (this.canvas) {
+            this.width = this.canvas.width;
+            this.height = this.canvas.height;
+            // Recalculate any viewport-dependent values
+            this.applyBounds();
+        }
+    }
+
+    // Alternative constructor for width/height parameters (for backwards compatibility)
+    static createWithDimensions(width, height) {
+        // Create a temporary canvas-like object for compatibility
+        const dummyCanvas = { width, height };
+        const camera = new Camera(dummyCanvas);
+        camera.width = width;
+        camera.height = height;
+        return camera;
     }
 
     // Follow a target entity (usually the player)
@@ -82,8 +104,8 @@ class Camera {
 
     // Apply camera bounds to keep it within world limits
     applyBounds() {
-        const halfWidth = (this.canvas.width / 2) / this.zoom;
-        const halfHeight = (this.canvas.height / 2) / this.zoom;
+        const halfWidth = (this.width / 2) / this.zoom;
+        const halfHeight = (this.height / 2) / this.zoom;
 
         this.x = Math.max(this.bounds.minX + halfWidth, 
                  Math.min(this.bounds.maxX - halfWidth, this.x));
@@ -116,22 +138,22 @@ class Camera {
 
     // Convert world coordinates to screen coordinates
     worldToScreen(worldX, worldY) {
-        const screenX = (worldX - this.x + this.shakeOffset.x) * this.zoom + this.canvas.width / 2;
-        const screenY = (worldY - this.y + this.shakeOffset.y) * this.zoom + this.canvas.height / 2;
+        const screenX = (worldX - this.x + this.shakeOffset.x) * this.zoom + this.width / 2;
+        const screenY = (worldY - this.y + this.shakeOffset.y) * this.zoom + this.height / 2;
         return { x: screenX, y: screenY };
     }
 
     // Convert screen coordinates to world coordinates
     screenToWorld(screenX, screenY) {
-        const worldX = (screenX - this.canvas.width / 2) / this.zoom + this.x - this.shakeOffset.x;
-        const worldY = (screenY - this.canvas.height / 2) / this.zoom + this.y - this.shakeOffset.y;
+        const worldX = (screenX - this.width / 2) / this.zoom + this.x - this.shakeOffset.x;
+        const worldY = (screenY - this.height / 2) / this.zoom + this.y - this.shakeOffset.y;
         return { x: worldX, y: worldY };
     }
 
     // Get the visible world bounds
     getVisibleBounds() {
-        const halfWidth = (this.canvas.width / 2) / this.zoom;
-        const halfHeight = (this.canvas.height / 2) / this.zoom;
+        const halfWidth = (this.width / 2) / this.zoom;
+        const halfHeight = (this.height / 2) / this.zoom;
 
         return {
             left: this.x - halfWidth,
@@ -198,6 +220,13 @@ class Camera {
         this.shakeIntensity = 0;
         this.shakeDuration = 0;
         this.shakeOffset = { x: 0, y: 0 };
+    }
+
+    // Update canvas reference (useful for dynamic canvas changes)
+    setCanvas(canvas) {
+        this.canvas = canvas;
+        this.width = canvas.width;
+        this.height = canvas.height;
     }
 }
 
