@@ -11,7 +11,7 @@ export class BotManager {
         this.maxBots = CONFIG.BOTS.COUNT;
         this.spawnDelay = CONFIG.BOTS.DECISION_INTERVAL;
         this.lastSpawn = 0;
-        this.worldBounds = null; // Add this to store worldBounds
+        this.worldBounds = null;
         this.difficultyDistribution = {
             easy: 0.4,
             medium: 0.4,
@@ -138,11 +138,22 @@ export class BotManager {
                 worldBounds.bottom - 100
             );
             
-            // Check distance from all players
+            // Check distance from all players - Fixed to handle missing method
             let tooClose = false;
-            const players = this.game.getAllPlayers ? this.game.getAllPlayers() : [];
+            
+            // Try to get players from different possible sources
+            let players = [];
+            if (this.game.getAllPlayers && typeof this.game.getAllPlayers === 'function') {
+                players = this.game.getAllPlayers();
+            } else if (this.game.players && Array.isArray(this.game.players)) {
+                players = this.game.players;
+            } else if (this.game.player) {
+                players = [this.game.player];
+            }
             
             for (const player of players) {
+                if (!player || typeof player.x !== 'number' || typeof player.y !== 'number') continue;
+                
                 const distance = Utils.distance(x, y, player.x, player.y);
                 if (distance < minDistanceFromPlayers) {
                     tooClose = true;
@@ -243,18 +254,26 @@ export class BotManager {
             food: []
         };
         
-        // Find nearby players
-        const allPlayers = this.game.getAllPlayers ? this.game.getAllPlayers() : [];
+        // Find nearby players - Fixed to handle missing method
+        let allPlayers = [];
+        if (this.game.getAllPlayers && typeof this.game.getAllPlayers === 'function') {
+            allPlayers = this.game.getAllPlayers();
+        } else if (this.game.players && Array.isArray(this.game.players)) {
+            allPlayers = this.game.players;
+        } else if (this.game.player) {
+            allPlayers = [this.game.player];
+        }
+        
         for (const player of allPlayers) {
-            if (player === bot) continue;
+            if (player === bot || !player || typeof player.x !== 'number' || typeof player.y !== 'number') continue;
             
             const distance = Utils.distance(bot.x, bot.y, player.x, player.y);
             if (distance <= searchRadius) {
                 nearbyEntities.players.push({
                     entity: player,
                     distance: distance,
-                    threat: player.totalMass > bot.totalMass * 1.1,
-                    prey: bot.totalMass > player.totalMass * 1.1
+                    threat: (player.totalMass || player.mass || 20) > (bot.totalMass || bot.mass || 20) * 1.1,
+                    prey: (bot.totalMass || bot.mass || 20) > (player.totalMass || player.mass || 20) * 1.1
                 });
             }
         }
@@ -268,28 +287,33 @@ export class BotManager {
                 nearbyEntities.bots.push({
                     entity: otherBot,
                     distance: distance,
-                    threat: otherBot.totalMass > bot.totalMass * 1.1,
-                    prey: bot.totalMass > otherBot.totalMass * 1.1
+                    threat: (otherBot.totalMass || otherBot.mass || 20) > (bot.totalMass || bot.mass || 20) * 1.1,
+                    prey: (bot.totalMass || bot.mass || 20) > (otherBot.totalMass || otherBot.mass || 20) * 1.1
                 });
             }
         }
         
         // Find nearby food (with safety check for quadTree)
         if (this.game.quadTree && typeof this.game.quadTree.queryRange === 'function') {
-            const nearbyFood = this.game.quadTree.queryRange(
-                bot.x - searchRadius,
-                bot.y - searchRadius,
-                bot.x + searchRadius,
-                bot.y + searchRadius
-            );
-            
-            for (const item of nearbyFood) {
-                if (item instanceof Food) {
-                    nearbyEntities.food.push({
-                        entity: item,
-                        distance: Utils.distance(bot.x, bot.y, item.x, item.y)
-                    });
+            try {
+                const nearbyFood = this.game.quadTree.queryRange(
+                    bot.x - searchRadius,
+                    bot.y - searchRadius,
+                    bot.x + searchRadius,
+                    bot.y + searchRadius
+                );
+                
+                for (const item of nearbyFood) {
+                    if (item instanceof Food) {
+                        nearbyEntities.food.push({
+                            entity: item,
+                            distance: Utils.distance(bot.x, bot.y, item.x, item.y)
+                        });
+                    }
                 }
+            } catch (error) {
+                // Silently handle quadTree errors
+                console.warn('QuadTree query failed:', error);
             }
         }
         
@@ -300,7 +324,7 @@ export class BotManager {
         const aliveBots = [];
         
         for (const bot of this.bots) {
-            if (bot.isAlive && bot.cells.length > 0) {
+            if (bot.isAlive && bot.cells && bot.cells.length > 0) {
                 aliveBots.push(bot);
             } else {
                 this.usedNames.delete(bot.name);
@@ -376,10 +400,14 @@ export class BotManager {
     }
     
     getPerformanceStats() {
+        const aliveBots = this.getAllBots();
+        const totalMass = aliveBots.reduce((sum, bot) => sum + (bot.totalMass || bot.mass || 20), 0);
+        const averageMass = aliveBots.length > 0 ? totalMass / aliveBots.length : 0;
+        
         return {
             totalBots: this.bots.length,
-            aliveBots: this.getAllBots().length,
-            averageMass: this.bots.reduce((sum, bot) => sum + bot.totalMass, 0) / this.bots.length,
+            aliveBots: aliveBots.length,
+            averageMass: averageMass,
             difficultyBreakdown: this.getDifficultyBreakdown()
         };
     }
@@ -388,7 +416,9 @@ export class BotManager {
         const breakdown = { easy: 0, medium: 0, hard: 0, expert: 0 };
         
         for (const bot of this.bots) {
-            breakdown[bot.difficulty]++;
+            if (breakdown.hasOwnProperty(bot.difficulty)) {
+                breakdown[bot.difficulty]++;
+            }
         }
         
         return breakdown;
