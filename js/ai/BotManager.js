@@ -1,5 +1,5 @@
 // js/ai/BotManager.js
-import Bot from '../entities/Bot.js';  // Changed from named import to default import
+import Bot from '../entities/Bot.js';
 import { Food } from '../entities/Food.js';
 import { Utils } from '../utils/Utils.js';
 import { CONFIG } from '../core/Config.js';
@@ -8,9 +8,10 @@ export class BotManager {
     constructor(game) {
         this.game = game;
         this.bots = [];
-        this.maxBots = CONFIG.BOTS.COUNT; // Fixed: Changed from CONFIG.gameplay.maxBots
-        this.spawnDelay = CONFIG.BOTS.DECISION_INTERVAL; // Fixed: Use existing BOTS config
+        this.maxBots = CONFIG.BOTS.COUNT;
+        this.spawnDelay = CONFIG.BOTS.DECISION_INTERVAL;
         this.lastSpawn = 0;
+        this.worldBounds = null; // Add this to store worldBounds
         this.difficultyDistribution = {
             easy: 0.4,
             medium: 0.4,
@@ -27,11 +28,19 @@ export class BotManager {
         ];
         
         this.usedNames = new Set();
-        this.botUpdateInterval = 16; // Update bots every 16ms
+        this.botUpdateInterval = 16;
         this.lastBotUpdate = 0;
     }
     
-    initialize() {
+    initialize(worldBounds) {
+        // Store the worldBounds for later use
+        this.worldBounds = worldBounds || {
+            left: 0,
+            top: 0,
+            right: CONFIG.WORLD_WIDTH,
+            bottom: CONFIG.WORLD_HEIGHT
+        };
+        
         // Spawn initial bots
         this.spawnInitialBots();
     }
@@ -51,7 +60,7 @@ export class BotManager {
     }
     
     spawnInitialBots() {
-        const initialBotCount = Math.floor(this.maxBots * 0.7); // Start with 70% of max bots
+        const initialBotCount = Math.floor(this.maxBots * 0.7);
         
         for (let i = 0; i < initialBotCount; i++) {
             this.spawnBot();
@@ -75,12 +84,12 @@ export class BotManager {
         
         // Find safe spawn position
         const spawnPos = this.findSafeSpawnPosition();
-        if (!spawnPos) return null; // No safe position found
+        if (!spawnPos) return null;
         
         // Generate unique name
         const name = this.generateBotName();
         
-        // Create bot - using config object to pass name (aligning with Bot.js constructor)
+        // Create bot
         const bot = new Bot(spawnPos.x, spawnPos.y, difficulty, { name: name });
         bot.id = Utils.generateId();
         
@@ -104,13 +113,20 @@ export class BotManager {
             }
         }
         
-        return 'medium'; // Fallback
+        return 'medium';
     }
     
     findSafeSpawnPosition() {
         const maxAttempts = 50;
         const minDistanceFromPlayers = 150;
-        const worldBounds = this.game.worldBounds;
+        
+        // Use stored worldBounds instead of this.game.worldBounds
+        const worldBounds = this.worldBounds || {
+            left: 0,
+            top: 0,
+            right: CONFIG.WORLD_WIDTH,
+            bottom: CONFIG.WORLD_HEIGHT
+        };
         
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             const x = Utils.random(
@@ -124,7 +140,7 @@ export class BotManager {
             
             // Check distance from all players
             let tooClose = false;
-            const players = this.game.getAllPlayers();
+            const players = this.game.getAllPlayers ? this.game.getAllPlayers() : [];
             
             for (const player of players) {
                 const distance = Utils.distance(x, y, player.x, player.y);
@@ -148,7 +164,6 @@ export class BotManager {
         
         do {
             if (attempts > 100) {
-                // If we've tried too many times, add a number
                 const baseName = this.botNames[Math.floor(Math.random() * this.botNames.length)];
                 name = `${baseName}_${Utils.randomInt(1000, 9999)}`;
                 break;
@@ -163,7 +178,6 @@ export class BotManager {
     }
     
     configureBotByDifficulty(bot, difficulty) {
-        // Updated to match Bot.js property names and structure
         switch (difficulty) {
             case 'easy':
                 bot.reactionTime = 800;
@@ -192,7 +206,7 @@ export class BotManager {
                 bot.maxSpeed = 1.2;
                 break;
                 
-            case 'expert':  // Added expert level to match Bot.js
+            case 'expert':
                 bot.reactionTime = 100;
                 bot.ai.aggressionLevel = 0.95;
                 bot.ai.splitChance = 0.5;
@@ -204,7 +218,7 @@ export class BotManager {
     }
     
     updateBots(deltaTime) {
-        const gameTime = Date.now(); // Added gameTime parameter to match Bot.js update signature
+        const gameTime = Date.now();
         
         for (const bot of this.bots) {
             if (!bot.isAlive) continue;
@@ -212,13 +226,12 @@ export class BotManager {
             // Get nearby entities for bot AI
             const nearbyEntities = this.getNearbyEntities(bot);
             
-            // Update bot AI - matching Bot.js update signature
+            // Update bot AI
             bot.update(deltaTime, nearbyEntities, gameTime);
         }
     }
     
     getNearbyEntities(bot) {
-        // Updated to match Bot.js expected AI properties
         const searchRadius = Math.max(
             bot.ai?.huntRadius || 100, 
             bot.ai?.fleeRadius || 140
@@ -231,7 +244,7 @@ export class BotManager {
         };
         
         // Find nearby players
-        const allPlayers = this.game.getAllPlayers();
+        const allPlayers = this.game.getAllPlayers ? this.game.getAllPlayers() : [];
         for (const player of allPlayers) {
             if (player === bot) continue;
             
@@ -261,20 +274,22 @@ export class BotManager {
             }
         }
         
-        // Find nearby food
-        const nearbyFood = this.game.quadTree.queryRange(
-            bot.x - searchRadius,
-            bot.y - searchRadius,
-            bot.x + searchRadius,
-            bot.y + searchRadius
-        );
-        
-        for (const item of nearbyFood) {
-            if (item instanceof Food) {
-                nearbyEntities.food.push({
-                    entity: item,
-                    distance: Utils.distance(bot.x, bot.y, item.x, item.y)
-                });
+        // Find nearby food (with safety check for quadTree)
+        if (this.game.quadTree && typeof this.game.quadTree.queryRange === 'function') {
+            const nearbyFood = this.game.quadTree.queryRange(
+                bot.x - searchRadius,
+                bot.y - searchRadius,
+                bot.x + searchRadius,
+                bot.y + searchRadius
+            );
+            
+            for (const item of nearbyFood) {
+                if (item instanceof Food) {
+                    nearbyEntities.food.push({
+                        entity: item,
+                        distance: Utils.distance(bot.x, bot.y, item.x, item.y)
+                    });
+                }
             }
         }
         
@@ -288,7 +303,6 @@ export class BotManager {
             if (bot.isAlive && bot.cells.length > 0) {
                 aliveBots.push(bot);
             } else {
-                // Remove bot name from used names
                 this.usedNames.delete(bot.name);
             }
         }
@@ -312,23 +326,20 @@ export class BotManager {
         return this.bots.length;
     }
     
-    // Method to adjust difficulty distribution
-    setDifficultyDistribution(easy, medium, hard, expert = 0) {  // Added expert parameter
+    setDifficultyDistribution(easy, medium, hard, expert = 0) {
         const total = easy + medium + hard + expert;
         this.difficultyDistribution = {
             easy: easy / total,
             medium: medium / total,
             hard: hard / total,
-            expert: expert / total  // Added expert difficulty
+            expert: expert / total
         };
     }
     
-    // Method to spawn a specific type of bot (for shop system)
     spawnCompanionBot(player, botType) {
         const spawnPos = this.findSafeSpawnPosition();
         if (!spawnPos) return null;
         
-        // Using config object to pass name (matching Bot.js constructor)
         const bot = new Bot(spawnPos.x, spawnPos.y, 'medium', { 
             name: `${player.name}'s ${botType}` 
         });
@@ -336,7 +347,6 @@ export class BotManager {
         bot.owner = player;
         bot.companionType = botType;
         
-        // Configure companion bot behavior
         this.configureCompanionBot(bot, botType);
         
         this.bots.push(bot);
@@ -344,7 +354,6 @@ export class BotManager {
     }
     
     configureCompanionBot(bot, botType) {
-        // Updated to use bot.ai properties to match Bot.js structure
         switch (botType) {
             case 'Defender':
                 bot.ai.aggressionLevel = 0.9;
@@ -366,7 +375,6 @@ export class BotManager {
         }
     }
     
-    // Performance monitoring
     getPerformanceStats() {
         return {
             totalBots: this.bots.length,
@@ -377,7 +385,7 @@ export class BotManager {
     }
     
     getDifficultyBreakdown() {
-        const breakdown = { easy: 0, medium: 0, hard: 0, expert: 0 }; // Added expert
+        const breakdown = { easy: 0, medium: 0, hard: 0, expert: 0 };
         
         for (const bot of this.bots) {
             breakdown[bot.difficulty]++;
