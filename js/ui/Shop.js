@@ -1,6 +1,6 @@
 // js/ui/Shop.js
 import { CONFIG } from '../core/Config.js';
-import { EventSystem } from '../core/EventSystem.js';
+import { gameEvents } from '../core/EventSystem.js';
 import { Utils } from '../utils/Utils.js';
 
 export class Shop {
@@ -150,13 +150,13 @@ export class Shop {
     }
     
     setupEventListeners() {
-        EventSystem.on('keydown', (data) => {
+        gameEvents.on('keydown', (data) => {
             if (data.key === 'Tab' || data.key === 'Escape') {
                 this.toggleShop();
             }
         });
         
-        EventSystem.on('playerStatsUpdated', () => {
+        gameEvents.on('playerStatsUpdated', () => {
             this.updateCurrencyDisplay();
         });
     }
@@ -228,7 +228,7 @@ export class Shop {
             this.shopContainer.classList.add('hidden');
         }
         
-        EventSystem.emit('shopToggled', { isOpen: this.isOpen });
+        gameEvents.emit('shopToggled', { isOpen: this.isOpen });
     }
     
     switchCategory(category) {
@@ -422,7 +422,7 @@ export class Shop {
         }
         
         // Emit purchase event
-        EventSystem.emit('itemPurchased', {
+        gameEvents.emit('itemPurchased', {
             player: player,
             item: item
         });
@@ -487,7 +487,7 @@ export class Shop {
         player.inventory.set(itemId, currentCount - 1);
         
         // Apply the item effect (handled by other systems)
-        EventSystem.emit('consumableItemUsed', {
+        gameEvents.emit('consumableItemUsed', {
             player: player,
             item: item
         });
