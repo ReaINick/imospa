@@ -214,7 +214,8 @@ export class Shop {
             });
         });
         
-        this.updateShopDisplay();
+        // Don't update shop display immediately - wait until player exists
+        // this.updateShopDisplay();
     }
     
     toggleShop() {
@@ -262,9 +263,10 @@ export class Shop {
     }
     
     createItemElement(item) {
-        const player = this.game.player;
-        const canAfford = this.canPlayerAfford(player, item);
-        const owned = this.getPlayerItemCount(player, item.id);
+        // Check if player exists, if not use default values
+        const player = this.game && this.game.player ? this.game.player : null;
+        const canAfford = player ? this.canPlayerAfford(player, item) : false;
+        const owned = player ? this.getPlayerItemCount(player, item.id) : 0;
         
         const itemDiv = document.createElement('div');
         itemDiv.className = `shop-item ${canAfford ? '' : 'disabled'}`;
@@ -303,10 +305,10 @@ export class Shop {
     
     updateItemDetails(item) {
         const detailsContainer = this.shopContainer.querySelector('#shop-details');
-        const player = this.game.player;
-        const canAfford = this.canPlayerAfford(player, item);
-        const owned = this.getPlayerItemCount(player, item.id);
-        const canPurchase = this.canPurchaseItem(player, item);
+        const player = this.game && this.game.player ? this.game.player : null;
+        const canAfford = player ? this.canPlayerAfford(player, item) : false;
+        const owned = player ? this.getPlayerItemCount(player, item.id) : 0;
+        const canPurchase = player ? this.canPurchaseItem(player, item) : false;
         
         const currencyIcon = item.currency === 'platinum' ? '💎' : '🪙';
         
@@ -369,6 +371,8 @@ export class Shop {
     }
     
     canPlayerAfford(player, item) {
+        if (!player) return false;
+        
         if (item.currency === 'coins') {
             return player.coins >= item.cost;
         } else if (item.currency === 'platinum') {
@@ -378,7 +382,7 @@ export class Shop {
     }
     
     canPurchaseItem(player, item) {
-        if (!this.canPlayerAfford(player, item)) return false;
+        if (!player || !this.canPlayerAfford(player, item)) return false;
         
         if (item.type === 'permanent' && item.unlocked) {
             return false; // Already owned
@@ -393,14 +397,15 @@ export class Shop {
     }
     
     getPlayerItemCount(player, itemId) {
+        if (!player || !player.inventory) return 0;
         return player.inventory.get(itemId) || 0;
     }
     
     purchaseItem(itemId) {
         const item = this.items[itemId];
-        const player = this.game.player;
+        const player = this.game && this.game.player ? this.game.player : null;
         
-        if (!item || !this.canPurchaseItem(player, item)) {
+        if (!item || !player || !this.canPurchaseItem(player, item)) {
             return false;
         }
         
@@ -428,28 +433,37 @@ export class Shop {
         });
         
         // Save progress
-        this.game.saveSystem.save();
+        if (this.game && this.game.saveSystem) {
+            this.game.saveSystem.save();
+        }
         
         return true;
     }
     
     grantItem(player, item) {
+        if (!player) return;
+        
         if (item.type === 'permanent') {
             item.unlocked = true;
-            player.unlockedItems.add(item.id);
+            if (player.unlockedItems) {
+                player.unlockedItems.add(item.id);
+            }
         } else if (item.type === 'consumable') {
+            if (!player.inventory) {
+                player.inventory = new Map();
+            }
             const currentCount = player.inventory.get(item.id) || 0;
             player.inventory.set(item.id, Math.min(currentCount + 1, item.maxStack));
         }
     }
     
     updateCurrencyDisplay() {
-        const player = this.game.player;
+        const player = this.game && this.game.player ? this.game.player : null;
         const coinsDisplay = this.shopContainer.querySelector('#shop-coins');
         const platinumDisplay = this.shopContainer.querySelector('#shop-platinum');
         
-        if (coinsDisplay) coinsDisplay.textContent = player.coins;
-        if (platinumDisplay) platinumDisplay.textContent = player.platinumCoins;
+        if (coinsDisplay) coinsDisplay.textContent = player ? player.coins : 0;
+        if (platinumDisplay) platinumDisplay.textContent = player ? player.platinumCoins : 0;
     }
     
     // Public methods for other systems
@@ -467,10 +481,10 @@ export class Shop {
     
     hasPlayerUnlocked(player, itemId) {
         const item = this.items[itemId];
-        if (!item) return false;
+        if (!item || !player) return false;
         
         if (item.type === 'permanent') {
-            return item.unlocked || player.unlockedItems.has(itemId);
+            return item.unlocked || (player.unlockedItems && player.unlockedItems.has(itemId));
         }
         
         return true; // Consumables are always "unlocked"
@@ -478,7 +492,11 @@ export class Shop {
     
     useConsumableItem(player, itemId) {
         const item = this.items[itemId];
-        if (!item || item.type !== 'consumable') return false;
+        if (!item || !player || item.type !== 'consumable') return false;
+        
+        if (!player.inventory) {
+            player.inventory = new Map();
+        }
         
         const currentCount = player.inventory.get(itemId) || 0;
         if (currentCount <= 0) return false;
