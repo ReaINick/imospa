@@ -166,7 +166,11 @@ initializeUI() {
     console.log('UI systems initialized');
 }
     
-
+initializeGameSystems() {
+    
+    // Initialize bot manager
+    this.botManager.initialize(this.worldBounds);
+}
     setupGameEvents() {
         // Player progression events
         gameEvents.on('player.levelUp', (data) => {
