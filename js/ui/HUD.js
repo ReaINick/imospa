@@ -1,11 +1,12 @@
 // js/ui/HUD.js
-import { EventSystem } from '../core/EventSystem.js';
+import { gameEvents } from '../core/EventSystem.js';
 import { Utils } from '../utils/Utils.js';
 
 export class HUD {
-    constructor(canvas) {
-        this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
+    constructor(game = null) {
+        this.game = game;
+        this.canvas = null;
+        this.ctx = null;
         this.player = null;
         this.gameStats = {
             fps: 0,
@@ -17,10 +18,10 @@ export class HUD {
             massDisplay: { x: 20, y: 30, visible: true },
             levelDisplay: { x: 20, y: 60, visible: true },
             currencyDisplay: { x: 20, y: 90, visible: true },
-            leaderboard: { x: canvas.width - 200, y: 20, visible: true },
-            minimap: { x: canvas.width - 150, y: canvas.height - 150, visible: true },
-            powerupBar: { x: canvas.width / 2 - 200, y: canvas.height - 60, visible: true },
-            chatBox: { x: 20, y: canvas.height - 150, visible: false }
+            leaderboard: { x: 0, y: 20, visible: true }, // Will be updated in updateElementPositions
+            minimap: { x: 0, y: 0, visible: true }, // Will be updated in updateElementPositions
+            powerupBar: { x: 0, y: 0, visible: true }, // Will be updated in updateElementPositions
+            chatBox: { x: 20, y: 0, visible: false } // Will be updated in updateElementPositions
         };
         
         this.minimap = {
@@ -44,28 +45,41 @@ export class HUD {
         this.chatMessages = [];
         this.maxChatMessages = 5;
         this.chatInputActive = false;
+        this.notifications = [];
         
         this.setupEventListeners();
     }
     
+    // Initialize with canvas after it's available
+    initialize(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas ? canvas.getContext('2d') : null;
+        this.updateElementPositions();
+    }
+    
+    // Set the game instance if not provided in constructor
+    setGame(game) {
+        this.game = game;
+    }
+    
     setupEventListeners() {
-        EventSystem.on('playerStatsUpdated', (data) => {
+        gameEvents.on('playerStatsUpdated', (data) => {
             this.updatePlayerStats(data);
         });
         
-        EventSystem.on('gameStatsUpdated', (stats) => {
+        gameEvents.on('gameStatsUpdated', (stats) => {
             this.gameStats = { ...this.gameStats, ...stats };
         });
         
-        EventSystem.on('chatMessage', (message) => {
+        gameEvents.on('chatMessage', (message) => {
             this.addChatMessage(message);
         });
         
-        EventSystem.on('powerupUsed', (data) => {
+        gameEvents.on('powerup.activated', (data) => {
             this.showPowerupNotification(data);
         });
         
-        EventSystem.on('levelUp', (data) => {
+        gameEvents.on('player.levelUp', (data) => {
             this.showLevelUpEffect(data);
         });
     }
@@ -83,6 +97,8 @@ export class HUD {
     }
     
     render(camera, worldEntities) {
+        if (!this.ctx || !this.canvas) return;
+        
         this.ctx.save();
         
         // Render HUD elements
@@ -132,7 +148,7 @@ export class HUD {
         this.ctx.strokeStyle = '#000000';
         this.ctx.lineWidth = 2;
         
-        const massText = `Mass: ${Math.floor(this.player.totalMass)}`;
+        const massText = `Mass: ${Math.floor(this.player.totalMass || this.player.mass || 0)}`;
         this.ctx.strokeText(massText, pos.x, pos.y);
         this.ctx.fillText(massText, pos.x, pos.y);
     }
@@ -146,7 +162,7 @@ export class HUD {
         this.ctx.strokeStyle = '#000000';
         this.ctx.lineWidth = 2;
         
-        const levelText = `Level: ${this.player.level}`;
+        const levelText = `Level: ${this.player.level || 1}`;
         this.ctx.strokeText(levelText, pos.x, pos.y);
         this.ctx.fillText(levelText, pos.x, pos.y);
         
@@ -161,7 +177,9 @@ export class HUD {
         this.ctx.fillRect(barX, barY, barWidth, barHeight);
         
         // Progress
-        const progress = this.player.experience / this.player.experienceToNext;
+        const experience = this.player.experience || 0;
+        const experienceToNext = this.player.experienceToNext || 100;
+        const progress = Math.min(1, experience / experienceToNext);
         this.ctx.fillStyle = '#00ff00';
         this.ctx.fillRect(barX, barY, barWidth * progress, barHeight);
         
@@ -182,13 +200,13 @@ export class HUD {
         this.ctx.strokeStyle = '#000000';
         this.ctx.lineWidth = 1;
         
-        const coinsText = `💰 ${this.player.coins}`;
+        const coinsText = `💰 ${this.player.coins || 0}`;
         this.ctx.strokeText(coinsText, pos.x, pos.y);
         this.ctx.fillText(coinsText, pos.x, pos.y);
         
         // Platinum coins
         this.ctx.fillStyle = '#c0c0c0';
-        const platinumText = `💎 ${this.player.platinumCoins}`;
+        const platinumText = `💎 ${this.player.platinumCoins || 0}`;
         this.ctx.strokeText(platinumText, pos.x, pos.y + 20);
         this.ctx.fillText(platinumText, pos.x, pos.y + 20);
     }
@@ -233,9 +251,14 @@ export class HUD {
             this.ctx.fillText(`${rank}. ${player.name}`, pos.x + 10, y);
             this.ctx.fillText(Math.floor(player.mass), pos.x + width - 50, y);
         });
+        
+        // Reset text align
+        this.ctx.textAlign = 'left';
     }
     
     renderMinimap(camera, worldEntities) {
+        if (!camera || !worldEntities) return;
+        
         const pos = this.elements.minimap;
         const size = this.minimap.size;
         
@@ -248,7 +271,7 @@ export class HUD {
         this.ctx.lineWidth = 2;
         this.ctx.strokeRect(pos.x, pos.y, size, size);
         
-        if (!this.player || !worldEntities) return;
+        if (!this.player) return;
         
         const scale = this.minimap.scale;
         const centerX = pos.x + size / 2;
@@ -268,8 +291,10 @@ export class HUD {
         
         // Render entities
         worldEntities.forEach(entity => {
-            const mapX = centerX + (entity.x - this.player.x) * scale;
-            const mapY = centerY + (entity.y - this.player.y) * scale;
+            const playerX = this.player.x || 0;
+            const playerY = this.player.y || 0;
+            const mapX = centerX + ((entity.x || 0) - playerX) * scale;
+            const mapY = centerY + ((entity.y || 0) - playerY) * scale;
             
             // Only render if within minimap bounds
             if (mapX >= pos.x && mapX <= pos.x + size && 
@@ -284,7 +309,7 @@ export class HUD {
                 } else if (entity === this.player || 
                           (entity.owner && entity.owner === this.player)) {
                     color = this.minimap.playerColor;
-                    radius = Math.max(2, entity.radius * scale);
+                    radius = Math.max(2, (entity.radius || 10) * scale);
                 }
                 
                 this.ctx.fillStyle = color;
@@ -301,15 +326,17 @@ export class HUD {
         this.ctx.fill();
         
         // Render viewport indicator
-        this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = 1;
-        const viewportSize = Math.min(camera.viewport.width, camera.viewport.height) * scale / 2;
-        this.ctx.strokeRect(
-            centerX - viewportSize / 2,
-            centerY - viewportSize / 2,
-            viewportSize,
-            viewportSize
-        );
+        if (camera.viewport) {
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 1;
+            const viewportSize = Math.min(camera.viewport.width || 800, camera.viewport.height || 600) * scale / 2;
+            this.ctx.strokeRect(
+                centerX - viewportSize / 2,
+                centerY - viewportSize / 2,
+                viewportSize,
+                viewportSize
+            );
+        }
     }
     
     renderPowerupBar() {
@@ -366,6 +393,9 @@ export class HUD {
             this.ctx.fillStyle = '#cccccc';
             this.ctx.fillText(`${index + 1}`, x + iconSize / 2, y + iconSize + 15);
         });
+        
+        // Reset text align
+        this.ctx.textAlign = 'left';
     }
     
     renderChatBox() {
@@ -438,16 +468,19 @@ export class HUD {
         
         // Background
         this.ctx.fillStyle = notification.backgroundColor || 'rgba(0, 0, 0, 0.8)';
+        this.ctx.font = notification.font || 'bold 18px Arial';
         const textWidth = this.ctx.measureText(notification.text).width;
         this.ctx.fillRect(x - textWidth / 2 - 20, y - 20, textWidth + 40, 40);
         
         // Text
-        this.ctx.font = notification.font || 'bold 18px Arial';
         this.ctx.fillStyle = notification.color || '#ffffff';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(notification.text, x, y + 5);
         
         this.ctx.restore();
+        
+        // Reset text align
+        this.ctx.textAlign = 'left';
     }
     
     // Utility methods
@@ -467,6 +500,8 @@ export class HUD {
     }
     
     updateElementPositions() {
+        if (!this.canvas) return;
+        
         // Responsive positioning
         this.elements.leaderboard.x = this.canvas.width - 200;
         this.elements.minimap.x = this.canvas.width - 150;
@@ -509,7 +544,7 @@ export class HUD {
         if (!this.notifications) this.notifications = [];
         
         this.notifications.push({
-            text: `${data.powerup.name} Activated!`,
+            text: `${data.powerup?.name || 'Powerup'} Activated!`,
             startTime: Date.now(),
             duration: 3000,
             color: '#00ff00',
@@ -522,7 +557,7 @@ export class HUD {
         if (!this.notifications) this.notifications = [];
         
         this.notifications.push({
-            text: `Level Up! Level ${data.level}`,
+            text: `Level Up! Level ${data.level || 'Unknown'}`,
             startTime: Date.now(),
             duration: 4000,
             color: '#ffd700',
@@ -555,9 +590,27 @@ export class HUD {
         this.chatInputActive = false;
     }
     
+    show() {
+        // Show HUD elements
+        Object.keys(this.elements).forEach(key => {
+            if (key !== 'chatBox') { // Keep chat hidden by default
+                this.elements[key].visible = true;
+            }
+        });
+    }
+    
+    hide() {
+        // Hide all HUD elements
+        Object.keys(this.elements).forEach(key => {
+            this.elements[key].visible = false;
+        });
+    }
+    
     resize(width, height) {
-        this.canvas.width = width;
-        this.canvas.height = height;
+        if (this.canvas) {
+            this.canvas.width = width;
+            this.canvas.height = height;
+        }
         this.updateElementPositions();
     }
 }
