@@ -37,7 +37,35 @@ export class Renderer {
         this.ctx.textBaseline = 'middle';
         this.ctx.font = '14px Arial';
     }
-    
+    handleResize(width, height) {
+    // Update canvas dimensions if they've changed
+    if (this.canvas.width !== width || this.canvas.height !== height) {
+        this.canvas.width = width;
+        this.canvas.height = height;
+        
+        // Re-setup canvas properties after resize
+        this.setupCanvas();
+        
+        // Inform camera of resize if it doesn't have canvas reference
+        if (this.camera && typeof this.camera.resize === 'function') {
+            this.camera.resize();
+        }
+        
+        console.log('Renderer resized:', { width, height });
+    }
+}
+
+// Also add this method to handle dynamic canvas reference updates
+setCanvas(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.setupCanvas();
+}
+
+// And update the camera reference
+setCamera(camera) {
+    this.camera = camera;
+}
     // Main render function
     render(gameState) {
         this.clearCanvas();
