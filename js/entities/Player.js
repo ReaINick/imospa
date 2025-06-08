@@ -2,7 +2,7 @@
 import { Cell } from './Cell.js';
 import { Utils } from '../utils/Utils.js';
 import { CONFIG } from '../core/Config.js';
-import { EventSystem } from '../core/EventSystem.js';
+import { gameEvents } from '../core/EventSystem.js';
 
 export class Player extends Cell {
     constructor(x, y, name = 'Player') {
@@ -193,7 +193,7 @@ export class Player extends Cell {
             this.lastSplitTime = Date.now();
             this.splitCooldown = CONFIG.PLAYER.SPLIT_COOLDOWN;
             
-            EventSystem.emit('playerSplit', {
+            gameEvents.emit('playerSplit', {
                 player: this,
                 newCells: newCells.length
             });
@@ -306,7 +306,7 @@ export class Player extends Cell {
             this.cells.splice(index, 1);
         }
         
-        EventSystem.emit('cellsRecombined', {
+        gameEvents.emit('cellsRecombined', {
             player: this,
             finalMass: totalMass
         });
@@ -353,7 +353,7 @@ export class Player extends Cell {
         this.gainExperience(Math.floor(massGained));
         this.gainCoins(Math.floor(massGained / 10));
         
-        EventSystem.emit('playerAbsorption', {
+        gameEvents.emit('playerAbsorption', {
             player: this,
             target: target,
             massGained: massGained
@@ -383,7 +383,7 @@ export class Player extends Cell {
         // Recalculate experience needed for next level
         this.experienceToNext = this.calculateExperienceToNext();
         
-        EventSystem.emit('playerLevelUp', {
+        gameEvents.emit('playerLevelUp', {
             player: this,
             newLevel: this.level,
             coinReward: coinReward
@@ -397,7 +397,7 @@ export class Player extends Cell {
     gainCoins(amount) {
         this.coins += amount;
         
-        EventSystem.emit('coinsGained', {
+        gameEvents.emit('coinsGained', {
             player: this,
             amount: amount,
             total: this.coins
@@ -483,7 +483,7 @@ export class Player extends Cell {
         this.isDead = true;
         this.statistics.timesEaten++;
         
-        EventSystem.emit('playerDied', {
+        gameEvents.emit('playerDied', {
             player: this,
             finalMass: this.getTotalMass(),
             level: this.level
@@ -501,7 +501,7 @@ export class Player extends Cell {
         this.recombineTimer.clear();
         this.splitCooldown = 0;
         
-        EventSystem.emit('playerRespawned', { player: this });
+        gameEvents.emit('playerRespawned', { player: this });
     }
 
     // Serialization for save system
