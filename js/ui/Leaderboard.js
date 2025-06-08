@@ -1,5 +1,5 @@
 // js/ui/Leaderboard.js
-import { EventSystem } from '../core/EventSystem.js';
+import { gameEvents } from '../core/EventSystem.js';
 import { CONFIG } from '../core/Config.js';
 
 export class Leaderboard {
@@ -15,6 +15,13 @@ export class Leaderboard {
         this.animationOffset = 0;
         this.entryHeight = 32;
         this.fadeInDuration = 300;
+        
+        // Store event listener references for cleanup
+        this.eventListeners = {
+            playerUpdate: null,
+            playerDeath: null,
+            gameStateUpdate: null
+        };
         
         // Create DOM elements
         this.createElement();
@@ -190,6 +197,16 @@ export class Leaderboard {
                 font-size: 12px;
             }
             
+            .leaderboard-entry[data-player-id] .leaderboard-mass.mass-change {
+                animation: massChangeAnimation 0.5s ease;
+            }
+            
+            @keyframes massChangeAnimation {
+                0% { transform: scale(1); color: #4CAF50; }
+                50% { transform: scale(1.2); color: #FFD700; }
+                100% { transform: scale(1); color: #4CAF50; }
+            }
+            
             @keyframes slideIn {
                 from {
                     transform: translateX(100%);
@@ -226,25 +243,30 @@ export class Leaderboard {
     }
     
     setupEventListeners() {
+        // Store bound functions for proper cleanup
+        this.eventListeners.playerUpdate = (data) => {
+            this.updatePlayerData(data.player);
+        };
+        
+        this.eventListeners.playerDeath = (data) => {
+            this.removePlayer(data.player);
+        };
+        
+        this.eventListeners.gameStateUpdate = (data) => {
+            if (data.players) {
+                this.updateAllPlayers(data.players);
+            }
+        };
+        
+        // Listen for game events using gameEvents instance
+        gameEvents.on('playerUpdate', this.eventListeners.playerUpdate);
+        gameEvents.on('playerDeath', this.eventListeners.playerDeath);
+        gameEvents.on('gameStateUpdate', this.eventListeners.gameStateUpdate);
+        
         // Toggle leaderboard visibility
         document.addEventListener('click', (e) => {
             if (e.target.id === 'leaderboard-toggle') {
                 this.toggleVisibility();
-            }
-        });
-        
-        // Listen for game events
-        EventSystem.on('playerUpdate', (data) => {
-            this.updatePlayerData(data.player);
-        });
-        
-        EventSystem.on('playerDeath', (data) => {
-            this.removePlayer(data.player);
-        });
-        
-        EventSystem.on('gameStateUpdate', (data) => {
-            if (data.players) {
-                this.updateAllPlayers(data.players);
             }
         });
         
@@ -263,7 +285,7 @@ export class Leaderboard {
         const playerData = {
             id: player.id,
             name: player.name,
-            mass: Math.floor(player.totalMass),
+            mass: Math.floor(player.totalMass || player.mass),
             level: player.level || 1,
             isBot: player.isBot || false,
             cells: player.cells ? player.cells.length : 1,
@@ -289,7 +311,7 @@ export class Leaderboard {
         this.players = players.map(player => ({
             id: player.id,
             name: player.name,
-            mass: Math.floor(player.totalMass),
+            mass: Math.floor(player.totalMass || player.mass),
             level: player.level || 1,
             isBot: player.isBot || false,
             cells: player.cells ? player.cells.length : 1,
@@ -348,6 +370,7 @@ export class Leaderboard {
     createPlayerEntry(player, rank, currentPlayer) {
         const entry = document.createElement('div');
         entry.className = 'leaderboard-entry';
+        entry.setAttribute('data-player-id', player.id);
         
         // Highlight current player
         if (currentPlayer && player.id === currentPlayer.id) {
@@ -510,9 +533,12 @@ export class Leaderboard {
             this.element.parentNode.removeChild(this.element);
         }
         
-        // Remove event listeners
-        EventSystem.off('playerUpdate');
-        EventSystem.off('playerDeath');
-        EventSystem.off('gameStateUpdate');
+        // Remove event listeners using the stored references
+        gameEvents.off('playerUpdate', this.eventListeners.playerUpdate);
+        gameEvents.off('playerDeath', this.eventListeners.playerDeath);
+        gameEvents.off('gameStateUpdate', this.eventListeners.gameStateUpdate);
+        
+        // Clear stored references
+        this.eventListeners = {};
     }
 }
