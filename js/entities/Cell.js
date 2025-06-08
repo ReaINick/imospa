@@ -268,10 +268,10 @@ export class Cell {
      * Generate random color for the cell
      * @returns {string} CSS color string
      */
-    generateColor() {
-        const colors = CONFIG.CELL_COLORS;
-        return colors[Math.floor(Math.random() * colors.length)];
-    }
+generateColor() {
+    const colors = CONFIG.CELL_COLORS;
+    return colors[Math.floor(Math.random() * colors.length)];
+}
 
     /**
      * Generate border color based on main color
