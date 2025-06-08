@@ -166,14 +166,17 @@ initializeUI() {
     console.log('UI systems initialized');
 }
     
-    initializeGameSystems() {
-        // Connect systems together
-        this.prestigeSystem.setProgressionSystem(this.progressionSystem);
-        this.prestigeSystem.setCurrencyManager(this.currencyManager);
-        
-        // Initialize bot manager
+initializeGameSystems() {
+    // Systems are already connected through global gameEvents
+    // Just initialize what needs initialization
+    
+    // Initialize bot manager if it exists
+    if (this.botManager && typeof this.botManager.initialize === 'function') {
         this.botManager.initialize(this.worldBounds);
     }
+    
+    console.log('Game systems initialized successfully');
+}
     
     setupGameEvents() {
         // Player progression events
