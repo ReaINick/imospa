@@ -1,32 +1,49 @@
 // js/main.js
-import { EventSystem, gameEvents } from './core/EventSystem.js';
+
+// 1. Import base utilities first to avoid dependency conflicts
 import { CONFIG } from './core/Config.js';
+import { Utils } from './utils/Utils.js';
+import { MathUtils } from './utils/Math.js';
+
+// 2. Core systems next
+import { EventSystem, gameEvents } from './core/EventSystem.js';
 import { GameLoop } from './core/GameLoop.js';
+
+// 3. Physics and entities after config is available
 import { PhysicsEngine } from './physics/PhysicsEngine.js';
-import { Renderer } from './rendering/Renderer.js';
-import Camera from './rendering/Camera.js';
-import ViewportManager from './rendering/ViewportManager.js';
-import { ParticleSystem } from './rendering/ParticleSystem.js';
 import { CollisionDetection } from './physics/CollisionDetection.js';
 import { Movement } from './physics/Movement.js';
 import { SplittingSystem } from './physics/Splitting.js';
+
+// 4. Entities — now safe to use CONFIG.CELL_COLORS
 import { Player } from './entities/Player.js';
+import { Bot } from './entities/Bot.js'; // Will extend Player safely now
 import { Food } from './entities/Food.js';
 import { Powerup } from './entities/Powerup.js';
-import { BotManager } from './ai/BotManager.js';
-import { UIManager } from './ui/UIManager.js';
-import { Shop } from './ui/Shop.js';
-import { HUD } from './ui/HUD.js';
-import { Leaderboard } from './ui/Leaderboard.js';
+
+// 5. AI components
+import { BotManager } from './ai/BotManager.js'; // Safe to import now
+
+// 6. Rendering
+import Renderer from './rendering/Renderer.js';
+import Camera from './rendering/Camera.js';
+import ViewportManager from './rendering/ViewportManager.js';
+import { ParticleSystem } from './rendering/ParticleSystem.js';
+
+// 7. UI Components
+import UIManager from './ui/UIManager.js';
+import Shop from './ui/Shop.js';
+import HUD from './ui/HUD.js';
+import Leaderboard from './ui/Leaderboard.js';
+
+// 8. Game systems
+import QuadTree from './utils/QuadTree.js';
 import { PowerupSystem } from './systems/PowerupSystem.js';
 import { ProgressionSystem } from './systems/ProgressionSystem.js';
 import { CurrencyManager } from './systems/CurrencyManager.js';
 import { SaveSystem } from './systems/SaveSystem.js';
 import { PrestigeSystem } from './systems/PrestigeSystem.js';
 import { AccountSystem } from './systems/AccountSystem.js';
-import QuadTree from './utils/QuadTree.js';
-import { Utils } from './utils/Utils.js';
-import { MathUtils } from './utils/Math.js';
 
 class Main {
     constructor() {
