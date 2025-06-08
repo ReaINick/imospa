@@ -144,11 +144,16 @@ class Main {
     }
     
 initializeUI() {
-    // Pass 'this' (the game instance) to UIManager and Shop
+    // Initialize UI components with proper dependencies
     this.uiManager = new UIManager(this);
     this.shop = new Shop(this); // Pass game instance to Shop
-    this.hud = new HUD();
+    this.hud = new HUD(this); // Pass game instance to HUD
     this.leaderboard = new Leaderboard();
+    
+    // Initialize HUD with canvas after it's created
+    if (this.canvas) {
+        this.hud.initialize(this.canvas);
+    }
     
     // Connect systems
     if (this.shop.setCurrencyManager) {
@@ -157,6 +162,8 @@ initializeUI() {
     if (this.hud.setProgressionSystem) {
         this.hud.setProgressionSystem(this.progressionSystem);
     }
+    
+    console.log('UI systems initialized');
 }
     
     initializeGameSystems() {
