@@ -159,7 +159,14 @@ export const CONFIG = {
         QUADTREE_MAX_LEVELS: 5,
         RENDER_CULLING: true,
         PARTICLE_LIMIT: 100
-    }
+    },
+
+    // --- ADDED CELL_COLORS DIRECTLY TO CONFIG ---
+    CELL_COLORS: [
+        '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
+        '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
+        '#BB8FCE', '#85C1E9', '#F8C471', '#82E0AA'
+    ]
 };
 
 // Color palettes
@@ -169,7 +176,6 @@ export const COLORS = {
         '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
         '#BB8FCE', '#85C1E9', '#F8C471', '#82E0AA'
     ],
-        // Add this missing property:
     CELL_COLORS: [
         '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
         '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
