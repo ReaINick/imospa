@@ -269,7 +269,7 @@ export class Cell {
      * @returns {string} CSS color string
      */
     generateColor() {
-        const colors = CONFIG.COLORS.CELL_COLORS;
+        const colors = CONFIG.CELL_COLORS;
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
