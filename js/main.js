@@ -168,9 +168,6 @@ initializeUI() {
     
     initializeGameSystems() {
         // Connect systems together
-        this.powerupSystem.setEventSystem(gameEvents);
-        this.progressionSystem.setEventSystem(gameEvents);
-        this.currencyManager.setEventSystem(gameEvents);
         this.prestigeSystem.setProgressionSystem(this.progressionSystem);
         this.prestigeSystem.setCurrencyManager(this.currencyManager);
         
