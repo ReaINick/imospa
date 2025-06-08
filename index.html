@@ -4,9 +4,431 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agar.io Clone</title>
-    <link rel="stylesheet" href="styles/main.css">
-    <link rel="stylesheet" href="styles/ui.css">
-    <link rel="stylesheet" href="styles/animations.css">
+    <style>
+        /* Basic CSS to prevent issues with missing stylesheets */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            overflow: hidden;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-bar {
+            width: 200px;
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: white;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Main Menu */
+        .main-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .menu-content {
+            text-align: center;
+            background: rgba(0,0,0,0.7);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .game-title {
+            font-size: 3em;
+            margin-bottom: 30px;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
+        .menu-form {
+            margin-bottom: 30px;
+        }
+
+        .name-input {
+            width: 300px;
+            padding: 15px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            background: rgba(255,255,255,0.9);
+        }
+
+        .play-button {
+            width: 200px;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .play-button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .menu-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .menu-btn {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .menu-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .account-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+        }
+
+        .currency-display {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        /* Game Container */
+        .game-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+        }
+
+        .game-canvas {
+            display: block;
+            background: #222;
+        }
+
+        /* Game UI */
+        .game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .hud-top {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 30px;
+            pointer-events: auto;
+        }
+
+        .player-info {
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .currency-hud {
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            display: flex;
+            gap: 15px;
+        }
+
+        .hud-center {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            pointer-events: auto;
+        }
+
+        .powerup-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .powerup-btn {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .powerup-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+        }
+
+        .hud-bottom {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            pointer-events: auto;
+        }
+
+        .experience-bar {
+            background: rgba(0,0,0,0.7);
+            height: 30px;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .exp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .exp-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .game-leaderboard {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 200px;
+            pointer-events: auto;
+        }
+
+        .game-leaderboard h3 {
+            color: white;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .game-leaderboard ol {
+            color: white;
+            font-size: 14px;
+        }
+
+        .minimap {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 10px;
+            padding: 10px;
+            pointer-events: auto;
+        }
+
+        .menu-toggle {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            pointer-events: auto;
+        }
+
+        /* Modals */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #2a2a2a;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #444;
+        }
+
+        .modal-header h2 {
+            color: white;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+
+        .shop-content, .settings-content, .game-over-content {
+            padding: 20px;
+            color: white;
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+        }
+
+        .setting-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .setting-group input, .setting-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #555;
+            border-radius: 5px;
+            background: #333;
+            color: white;
+        }
+
+        .final-stats {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .stat {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+
+        .game-over-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+    </style>
 </head>
 <body>
     <!-- Loading Screen -->
@@ -22,12 +444,13 @@
 
     <!-- Main Menu -->
     <div id="main-menu" class="main-menu">
-        <div class="menu-background"></div>
         <div class="menu-content">
             <h1 class="game-title">AGAR.IO CLONE</h1>
             <div class="menu-form">
                 <input type="text" id="player-name" placeholder="Enter your name" maxlength="20" class="name-input">
-                <button id="play-button" class="play-button">PLAY</button>
+                <div>
+                    <button id="play-button" class="play-button">PLAY</button>
+                </div>
                 <div class="menu-buttons">
                     <button id="shop-button" class="menu-btn">SHOP</button>
                     <button id="leaderboard-button" class="menu-btn">LEADERBOARD</button>
@@ -56,7 +479,7 @@
             <div id="hud" class="hud">
                 <div class="hud-top">
                     <div class="player-info">
-                        <div class="player-name" id="player-name-display"></div>
+                        <div class="player-name" id="player-name-display">Player</div>
                         <div class="player-mass" id="player-mass">Mass: 20</div>
                         <div class="player-level-hud">Level: <span id="player-level-hud">1</span></div>
                     </div>
@@ -87,7 +510,11 @@
             <!-- Leaderboard -->
             <div id="game-leaderboard" class="game-leaderboard">
                 <h3>Leaderboard</h3>
-                <ol id="leaderboard-list"></ol>
+                <ol id="leaderboard-list">
+                    <li>Player 1 - 1000</li>
+                    <li>Bot 1 - 800</li>
+                    <li>Bot 2 - 600</li>
+                </ol>
             </div>
             
             <!-- Minimap -->
@@ -108,7 +535,7 @@
                 <button class="modal-close" id="shop-close">&times;</button>
             </div>
             <div class="shop-content" id="shop-content">
-                <!-- Shop content will be populated by Shop.js -->
+                <p>Shop items will be loaded here...</p>
             </div>
         </div>
     </div>
@@ -171,6 +598,149 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="js/main.js"></script>
+    <script type="module">
+        // Basic game initialization to test the interface
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, setting up basic event handlers...');
+            
+            const loadingScreen = document.getElementById('loading-screen');
+            const mainMenu = document.getElementById('main-menu');
+            const gameContainer = document.getElementById('game-container');
+            const playButton = document.getElementById('play-button');
+            const playerNameInput = document.getElementById('player-name');
+            
+            // Hide loading screen after a short delay
+            setTimeout(() => {
+                if (loadingScreen) {
+                    loadingScreen.classList.add('hidden');
+                }
+            }, 2000);
+            
+            // Play button handler
+            if (playButton) {
+                playButton.addEventListener('click', () => {
+                    const playerName = playerNameInput?.value?.trim() || 'Anonymous';
+                    console.log('Starting game for player:', playerName);
+                    
+                    // Hide main menu and show game
+                    if (mainMenu) mainMenu.classList.add('hidden');
+                    if (gameContainer) gameContainer.classList.remove('hidden');
+                    
+                    // Update player name display
+                    const playerNameDisplay = document.getElementById('player-name-display');
+                    if (playerNameDisplay) {
+                        playerNameDisplay.textContent = playerName;
+                    }
+                    
+                    // Initialize canvas
+                    const canvas = document.getElementById('game-canvas');
+                    if (canvas) {
+                        canvas.width = window.innerWidth;
+                        canvas.height = window.innerHeight;
+                        
+                        // Draw a simple test pattern
+                        const ctx = canvas.getContext('2d');
+                        if (ctx) {
+                            // Clear canvas
+                            ctx.fillStyle = '#1a1a2e';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            
+                            // Draw grid
+                            ctx.strokeStyle = '#16213e';
+                            ctx.lineWidth = 1;
+                            for (let x = 0; x < canvas.width; x += 50) {
+                                ctx.beginPath();
+                                ctx.moveTo(x, 0);
+                                ctx.lineTo(x, canvas.height);
+                                ctx.stroke();
+                            }
+                            for (let y = 0; y < canvas.height; y += 50) {
+                                ctx.beginPath();
+                                ctx.moveTo(0, y);
+                                ctx.lineTo(canvas.width, y);
+                                ctx.stroke();
+                            }
+                            
+                            // Draw player cell in center
+                            ctx.fillStyle = '#4CAF50';
+                            ctx.beginPath();
+                            ctx.arc(canvas.width / 2, canvas.height / 2, 30, 0, Math.PI * 2);
+                            ctx.fill();
+                            
+                            // Draw player name
+                            ctx.fillStyle = 'white';
+                            ctx.font = '16px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(playerName, canvas.width / 2, canvas.height / 2 + 5);
+                            
+                            // Draw some food particles
+                            for (let i = 0; i < 50; i++) {
+                                const x = Math.random() * canvas.width;
+                                const y = Math.random() * canvas.height;
+                                const hue = Math.random() * 360;
+                                
+                                ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+                                ctx.beginPath();
+                                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Modal handlers
+            const shopButton = document.getElementById('shop-button');
+            const shopModal = document.getElementById('shop-modal');
+            const shopClose = document.getElementById('shop-close');
+            
+            if (shopButton && shopModal) {
+                shopButton.addEventListener('click', () => {
+                    shopModal.classList.remove('hidden');
+                });
+            }
+            
+            if (shopClose && shopModal) {
+                shopClose.addEventListener('click', () => {
+                    shopModal.classList.add('hidden');
+                });
+            }
+            
+            // Settings modal
+            const settingsButton = document.getElementById('settings-button');
+            const settingsModal = document.getElementById('settings-modal');
+            const settingsClose = document.getElementById('settings-close');
+            
+            if (settingsButton && settingsModal) {
+                settingsButton.addEventListener('click', () => {
+                    settingsModal.classList.remove('hidden');
+                });
+            }
+            
+            if (settingsClose && settingsModal) {
+                settingsClose.addEventListener('click', () => {
+                    settingsModal.classList.add('hidden');
+                });
+            }
+            
+            // Window resize handler
+            window.addEventListener('resize', () => {
+                const canvas = document.getElementById('game-canvas');
+                if (canvas && !gameContainer.classList.contains('hidden')) {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                    
+                    // Redraw basic scene
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        ctx.fillStyle = '#1a1a2e';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    }
+                }
+            });
+        });
+    </script>
+    <!-- Your main game script can be added here -->
+     <script type="module" src="js/main.js"></script> 
 </body>
 </html>
