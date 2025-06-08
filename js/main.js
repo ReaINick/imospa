@@ -198,7 +198,24 @@ class Main {
         
         console.log('UI systems initialized');
     }
+// Add this method to your Main class
+hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loading-screen');
+    const mainMenu = document.getElementById('main-menu');
     
+    if (loadingScreen) {
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+            loadingScreen.style.display = 'none';
+        }, 500);
+    }
+    
+    if (mainMenu) {
+        mainMenu.classList.remove('hidden');
+        mainMenu.style.display = 'block';
+    }
+}
     initializeGameSystems() {
         // Initialize BotManager AFTER all other systems are ready
         // This prevents circular dependency issues
@@ -275,7 +292,9 @@ class Main {
     }
     
     startGame(playerName) {
-        if (!this.initialized) {
+       
+
+ if (!this.initialized) {
             console.error('Game not initialized');
             return;
         }
@@ -934,10 +953,25 @@ class Main {
     }
     
     // UI state management
-    showMainMenu() {
-        this.gameState = 'menu';
+showMainMenu() {
+    this.gameState = 'menu';
+    
+    // Hide loading screen if it's still showing
+    this.hideLoadingScreen();
+    
+    // Show main menu
+    if (this.uiManager) {
         this.uiManager.showMenu('main');
     }
+    
+    // Make sure game container is hidden when showing menu
+    const gameContainer = document.getElementById('game-container');
+    if (gameContainer) {
+        gameContainer.classList.add('hidden');
+    }
+    
+    console.log('Main menu displayed');
+}
 
     toggleShop() {
         if (this.gameState === 'shop') {
