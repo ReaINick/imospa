@@ -18,7 +18,7 @@ import { UIManager } from './ui/UIManager.js';
 import { Shop } from './ui/Shop.js';
 import { HUD } from './ui/HUD.js';
 import { Leaderboard } from './ui/Leaderboard.js';
-import PowerupSystem from './systems/PowerupSystem.js';
+import { PowerupSystem } from './systems/PowerupSystem.js';
 import { ProgressionSystem } from './systems/ProgressionSystem.js';
 import { CurrencyManager } from './systems/CurrencyManager.js';
 import { SaveSystem } from './systems/SaveSystem.js';
