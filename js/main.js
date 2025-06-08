@@ -68,7 +68,7 @@ class Main {
         this.saveSystem = new SaveSystem();
         this.prestigeSystem = new PrestigeSystem();
         this.accountSystem = new AccountSystem();
-        this.botManager = new BotManager();
+        this.botManager = new BotManager(this);
         
         // Game entities
         this.player = null;
